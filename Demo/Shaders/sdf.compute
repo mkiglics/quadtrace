@@ -1,0 +1,22 @@
+#version 450
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+restrict writeonly uniform image3D sdf_values;
+
+float SDF(vec3 p)
+{
+	vec3 q = abs(p) - vec3(2, 3, 4);
+	return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+	return length(p+vec3(0,-0,0)) - 5;
+}
+
+void main()
+{
+	ivec3 coords = ivec3(gl_GlobalInvocationID.xyz);
+
+	imageStore(sdf_values, coords, vec4(SDF(coords - vec3(gl_NumWorkGroups.xyz)/2.0)));
+}
+
+
+

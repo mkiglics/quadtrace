@@ -1,0 +1,114 @@
+#version 450
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+restrict writeonly uniform image3D ecc;
+uniform sampler3D sdf_values;
+
+#define EPSILON 0.01
+#define PI 3.14159265359
+#define SAMPLES 100
+#define N 10
+#define M 10
+
+
+TraceResult sphere_trace(Ray ray, SphereTraceDesc params, vec3 dim)
+{
+	TraceResult ret = TraceResult(ray.Tmin, 0);
+	float d;
+
+	int i = 0; do
+	{
+		d = texture(sdf_values, (ray.P + ret.T * ray.V + dim/2) / dim).r;
+		ret.T += d;
+		++i;
+	} while (
+		ret.T < ray.Tmax &&       		// Stay within bound box
+		d	  > params.epsilon* ret.T&&	// Stop if cone is close to surface
+		i < params.maxiters	        	// Stop if too many iterations
+		);
+
+	ret.flags = int(ret.T >= ray.Tmax)
+		| (int(d <= params.epsilon * ret.T) << 1)
+		| (int(i >= params.maxiters) << 2);
+	return ret;
+}
+
+vec3 grad(vec3 coords, vec3 dim)
+{
+	//TODO x, y or z == 0
+	float[8] vert;
+	float[6] c;
+	for (int x = 0; x < 2; ++x)
+	{
+		for (int y = 0; y < 2; ++y)
+		{
+			for (int z = 0; z < 2; ++z)
+			{
+				vert[x * 4 + y * 2 + z] = texture(sdf_values, (coords + vec3(x, y, z)) / (dim+vec3(1))).r;
+			}
+		}
+	}
+	c[0] = (vert[0] + vert[1] + vert[2] + vert[3]) / 4;
+	c[1] = (vert[4] + vert[5] + vert[6] + vert[7]) / 4;
+	c[2] = (vert[0] + vert[1] + vert[4] + vert[5]) / 4;
+	c[3] = (vert[6] + vert[7] + vert[2] + vert[3]) / 4;
+	c[4] = (vert[0] + vert[4] + vert[2] + vert[6]) / 4;
+	c[5] = (vert[5] + vert[1] + vert[7] + vert[3]) / 4;
+
+
+	vec3 norm = vec3(c[0] - c[1], c[2] - c[3], c[4] - c[5]);
+	return length(norm) > EPSILON ? normalize(norm) : vec3(0, 1, 0);
+}
+
+
+void main()
+{
+
+	ivec3 coords = ivec3(gl_GlobalInvocationID.xyz);
+
+	
+	vec3 norm = grad(coords, gl_NumWorkGroups.xyz);
+	vec3 s = vec3(gl_NumWorkGroups.xyz) / 2.0 - vec3(0.5);
+	vec3 p = coords - s;
+
+	mat3 rot = getRotation(norm);
+	// approximation of k
+	float k = 1;
+	float sdfcenter = 0.5;
+
+
+	for (int i = 0; i < N; ++i)
+	{
+		for (int j = 0; j <= M; ++j)
+		{
+			float u = 2 * PI * i / float(N);
+			float v = PI * j / float(M);
+			vec3 d = normalize(vec3(cos(u) * sin(v), cos(v), sin(u) * sin(v)));
+			Ray r = Ray(p + sdfcenter*norm,
+				0.1,
+				d,
+				30);
+			TraceResult res = sphere_trace(r, SphereTraceDesc(0.3, 100), gl_NumWorkGroups.xyz + vec3(1));
+			if (bool(res.flags & 1)) { continue; }
+
+			float scale = res.T; //unbounding sphere center is at (0,0.5)
+			float cosPhi = dot(d, norm);
+			float sinPhi = sqrt(1 - cosPhi * cosPhi);
+			vec2 geogebrapos = vec2(sinPhi, cosPhi) * scale;
+			k = min(k, mix(getGeogebraK(geogebrapos), -1.0, 0.1));
+		//	break;
+		}
+		//break;
+	}
+
+	imageStore(ecc, coords, vec4(k));
+}
+
+
+
+
+
+
+
+
