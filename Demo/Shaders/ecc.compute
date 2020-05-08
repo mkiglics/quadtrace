@@ -19,7 +19,7 @@ TraceResult sphere_trace(Ray ray, SphereTraceDesc params, vec3 dim)
 
 	int i = 0; do
 	{
-		d = texture(sdf_values, (ray.P + ret.T * ray.V + dim/2) / dim).r;
+		d = texelFetch(sdf_values, ivec3(ray.P + ret.T * ray.V + dim/2), 0).r;
 		ret.T += d;
 		++i;
 	} while (
@@ -45,7 +45,7 @@ vec3 grad(vec3 coords, vec3 dim)
 		{
 			for (int z = 0; z < 2; ++z)
 			{
-				vert[x * 4 + y * 2 + z] = texture(sdf_values, (coords + vec3(x, y, z)) / (dim+vec3(1))).r;
+				vert[x * 4 + y * 2 + z] = texelFetch(sdf_values, ivec3(coords + vec3(x, y, z)), 0).r;
 			}
 		}
 	}
@@ -89,7 +89,7 @@ void main()
 				0.1,
 				d,
 				30);
-			TraceResult res = sphere_trace(r, SphereTraceDesc(0.3, 100), gl_NumWorkGroups.xyz + vec3(1));
+			TraceResult res = sphere_trace(r, SphereTraceDesc(0.3, 100), gl_NumWorkGroups.xyz);
 			if (bool(res.flags & 1)) { continue; }
 
 			float scale = res.T; //unbounding sphere center is at (0,0.5)

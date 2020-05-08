@@ -39,8 +39,8 @@ mat3 getRotation(vec3 normal)
 {
 	vec3 y = vec3(0, 1, 0);
 	vec3 v = cross(normal, y);
-	float c = dot(y, v);
-	mat3 m = mat3(0, -v.z, v.y, v.z, 0, -v.x, -v.y, v.x, 0);
+	float c = dot(normal, y);
+	mat3 m = mat3(0, v.z, -v.y, -v.z, 0, v.x, v.y, -v.x, 0);
 	return mat3(1) + m + m * m / (1 + c);
 }
 

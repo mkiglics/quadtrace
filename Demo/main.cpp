@@ -25,7 +25,7 @@ int main(int argc, char* args[])
 	auto frameBuff = df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1);
 
 	df::Texture3D<float> sdf_values(N_x, N_y, N_z);
-	df::Texture3D<glm::vec4> ecc(N_x - 1, N_y - 1, N_z - 1);
+	df::Texture3D<float> ecc(N_x - 1, N_y - 1, N_z - 1);
 	df::ComputeProgramEditor sdfComputeProgram = "SDFComputer";
 	sdfComputeProgram << "Shaders/sdf.compute"_comp << df::LinkProgram;
 
@@ -49,15 +49,11 @@ int main(int argc, char* args[])
 			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-			glBindImageTexture(0, (GLuint)ecc, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			glBindImageTexture(0, (GLuint)ecc, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 			eccComputeProgram << "sdf_values" << sdf_values;
 			glDispatchCompute(N_x - 1, N_y - 1, N_z - 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-
-			glBindTexture(GL_TEXTURE_3D, (GLuint)ecc);
-			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 			df::Backbuffer << df::Clear() << program << "k" << cosf(SDL_GetTicks()/1000.f) << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up"
 					<< cam.GetUp() << "windowSize" << glm::vec2(cam.GetSize().x,cam.GetSize().y) << "eccentricity" << ecc << "N" << glm::vec3(N_x, N_y, N_z) << "sdf_values" << sdf_values;

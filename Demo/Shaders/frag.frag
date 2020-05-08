@@ -12,6 +12,7 @@ layout(location = 0) in vec2 fs_in_tex;
 out vec4 fs_out_col;
 
 uniform float r = 5;
+uniform float _k = 1;
 uniform vec3 lightPos = vec3(8, 8, 8);
 
 
@@ -45,8 +46,8 @@ vec3 grad(vec3 coords, vec3 dim)
 		{
 			for (int z = 0; z < 2; ++z)
 			{
-				vert[x * 4 + y * 2 + z] = texture(sdf_values, (coords + vec3(x, y, z)) / dim + vec3(0.5)).r;
-//				vert[x * 4 + y * 2 + z] = SDF(coords + vec3(x, y, z));
+				vert[x * 4 + y * 2 + z] = texelFetch(sdf_values, ivec3(coords + vec3(x, y, z) + dim/2.0), 0).r;
+				//vert[x * 4 + y * 2 + z] = SDF(coords + vec3(x, y, z));
 			}
 		}
 	}
@@ -63,20 +64,20 @@ vec3 grad(vec3 coords, vec3 dim)
 }
 
 
-float quadDist(vec2 v, float Tmax, float k)
+float getT(vec3 p, vec3 v, float Tmax, float k)
 {
 	float a = abs(k);
 	float b = 2*(abs(k)-0.5);
 	float c = -k;
-	float e1 = a*v.x*v.x+b*v.y*v.y;
-	float e2 = c*v.y-b*v.y;
-	float e3 = b/4.0-c/2.0;
+	float e1 = a*v.x*v.x+a*v.z*v.z+b*v.y*v.y;
+	float e2 = 2*a*(p.x*v.x+p.z*v.z)+2*b*p.y*v.y+c*v.y;
+	float e3 = a*(p.x*p.x+p.z*p.z) + b*p.y*p.y+c*p.y;
 	float d = e2*e2-4*e1*e3;
-	if (d < 0) return 0;
+	if (d < 0) return Tmax+1;
 	float t1 = (-e2-sqrt(d))/2.0/e1;
 	float t2 = (-e2+sqrt(d))/2.0/e1;
-	if (t1 < 0) t1 = Tmax+1;
-	if (t2 < 0) t2 = Tmax+1;
+	if (t1 < 0 || sign(k) != sign((p+t1*v).y)) t1 = Tmax+1;
+	if (t2 < 0 || sign(k) != sign((p+t2*v).y)) t2 = Tmax+1;
 	return min(t1,t2);
 }
 
@@ -113,12 +114,13 @@ TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
     
     int i = 0; do
     {
-		dir = grad(ray.P+ret.T*ray.V, N);
-		k = texture(eccentricity, (ray.P+ret.T*ray.V)/(N-vec3(1))+vec3(0.5)).r;
-		float cosPhi = dot(ray.V, dir);
-		float sinPhi = sqrt(1 - cosPhi * cosPhi);
-		float t = quadDist(vec2(sinPhi, cosPhi),ray.Tmax, k);
-		d = max(t, SDF(ray.P+ret.T*ray.V));
+		vec3 p = ray.P+ret.T*ray.V;
+		dir = grad(p, N-vec3(1));
+		ivec3 c = ivec3(round(dir*0.5 + p));
+		k = texelFetch(eccentricity, c + ivec3((N-vec3(2))/2.0), 0).r;
+		mat3 rot = getRotation(dir);
+		float t = getT(rot*(p-c), rot*ray.V, ray.Tmax, k);
+		d = max(t, SDF(p));
 		ret.T += d;
         ++i;
     } while (
@@ -137,10 +139,9 @@ void main()
 {
 	Ray r = Camera(fs_in_tex, eye, at, windowSize);
 
-	TraceResult res = quad_trace(r, SphereTraceDesc(0.05, 10));
+	TraceResult res = quad_trace(r, SphereTraceDesc(0.01, 100));
 	if (bool(res.flags & 1))		{fs_out_col = vec4(0,0,0,1); return;}
 	if (bool(res.flags & 4))		{fs_out_col = vec4(1,0,0,1); return;}
-		//dist = texture(sdf_values, (p+t*r)/N+vec3(0.5)).r;
 	vec3 p = eye + r.V*res.T;
 	vec3 ambient = vec3(0.1, 0.1, 0.1);
 	vec3 n = getNormal(p,N);
