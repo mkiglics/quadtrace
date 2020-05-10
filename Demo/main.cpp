@@ -56,7 +56,7 @@ int main(int argc, char* args[])
 
 
 			df::Backbuffer << df::Clear() << program << "k" << cosf(SDL_GetTicks()/1000.f) << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up"
-					<< cam.GetUp() << "windowSize" << glm::vec2(cam.GetSize().x,cam.GetSize().y) << "eccentricity" << ecc << "N" << glm::vec3(N_x, N_y, N_z) << "sdf_values" << sdf_values;
+					<< cam.GetUp() << "windowSize" << glm::vec2(cam.GetSize().x,cam.GetSize().y) << "eccentricity" << ecc << "N" << glm::ivec3(N_x, N_y, N_z) << "sdf_values" << sdf_values;
 			program << df::NoVao(GL_TRIANGLE_STRIP, 4);	
 
 			GL_CHECK;

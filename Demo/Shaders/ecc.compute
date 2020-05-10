@@ -19,7 +19,7 @@ TraceResult sphere_trace(Ray ray, SphereTraceDesc params, vec3 dim)
 
 	int i = 0; do
 	{
-		d = texelFetch(sdf_values, ivec3(ray.P + ret.T * ray.V + dim/2), 0).r;
+		d = texelFetch(sdf_values, clamp(ivec3(ray.P + ret.T * ray.V + dim/2), ivec3(0), ivec3(dim)), 0).r;
 		ret.T += d;
 		++i;
 	} while (
@@ -88,8 +88,8 @@ void main()
 			Ray r = Ray(p + sdfcenter*norm,
 				0.1,
 				d,
-				30);
-			TraceResult res = sphere_trace(r, SphereTraceDesc(0.3, 100), gl_NumWorkGroups.xyz);
+				100);
+			TraceResult res = sphere_trace(r, SphereTraceDesc(0.1, 100), gl_NumWorkGroups.xyz);
 			if (bool(res.flags & 1)) { continue; }
 
 			float scale = res.T; //unbounding sphere center is at (0,0.5)
