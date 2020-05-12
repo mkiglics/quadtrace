@@ -34,5 +34,8 @@
     <None Include="Shaders\tracer.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\sdf.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

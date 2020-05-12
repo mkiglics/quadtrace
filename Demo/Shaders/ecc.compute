@@ -7,10 +7,8 @@ uniform sampler3D sdf_values;
 
 #define EPSILON 0.01
 #define PI 3.14159265359
-#define SAMPLES 100
 #define N 10
 #define M 10
-
 
 TraceResult sphere_trace(Ray ray, SphereTraceDesc params, vec3 dim)
 {
@@ -102,7 +100,7 @@ void main()
 		//break;
 	}
 
-	imageStore(ecc, coords, vec4(k));
+	imageStore(ecc, coords, vec4(clamp(k, -1, 1)));
 }
 
 

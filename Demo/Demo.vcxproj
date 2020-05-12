@@ -133,6 +133,7 @@
     <None Include="Shaders\frag.frag" />
     <None Include="Shaders\postprocess.frag" />
     <None Include="Shaders\postprocess.vert" />
+    <None Include="Shaders\sdf.frag" />
     <None Include="Shaders\tracer.frag" />
     <None Include="Shaders\vert.vert" />
   </ItemGroup>

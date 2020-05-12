@@ -1,7 +1,5 @@
 #version 410
 
-#define SGN(a) (a < 0 ? -1 : 1)
-
 const float MAX_ITERATIONS = 100;
 const float MAX_DISTANCE = 10000;
 const float EPSILON = 0.01;
@@ -22,12 +20,58 @@ float tanfov = tan(radians(45)/2);
 uniform vec3 eye, at, up;
 uniform vec2 windowSize;
 
-float SDF(vec3 p)
+
+
+const float inf = 1. / 0.; // at least OpenGL 4.1
+
+vec3 getABC(float k)
 {
-	vec3 q = abs(p) - vec3(2,3,4);
-	return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
-	return length(p+vec3(0, 0, 0)) - r;
+	return vec3(abs(k), 2*abs(k)-1,-k);
+	//return vec3(abs(k)*(1-abs(abs(k)-1)), 2*abs(k)-1,-k);
 }
+
+vec2 solveQuadratic(float a, float b, float c)
+{
+	float d = b*b-4*a*c;
+	float t1 = (-b-SGN(b)*sqrt(d))/(2*a);
+	float t2 = c/(a*t1);
+	return d<0 ? vec2(-inf, inf) : vec2(min(t1,t2), max(t1,t2));
+}
+
+vec2 intersectQuadric(vec3 ABC, vec3 p, vec3 v)
+{
+	float a = dot(ABC.xyx*v,v);
+	float b = 2*dot(ABC.xyx*v,p) + ABC.z*v.y;
+	float c = dot(ABC.xyx*p,p) + ABC.z*p.y;
+	return solveQuadratic(a,b,c);
+}
+
+float getT2(vec3 p, vec3 v, float k)
+{
+	vec3 ABC = getABC(k);
+	vec2 t12 = intersectQuadric(ABC, p, v);
+	float t1 = t12.x, t2 = t12.y;
+
+	//hiperbola ag vizsgalat: k es (p+t*v).y elojele kulonbozo kell legyen
+	if( (p.y+t1*v.y)*k > 0 ) t1 = -inf;
+	if( (p.y+t2*v.y)*k > 0 ) t2 = inf;
+
+	// metszesvizsgalat
+
+	float t = 0;
+	if(k>0)
+	{
+		t = t2 < 0 ? inf : t1; // ha t1<0 automatikusan jo
+	}
+	else
+	{
+		//t = t1 < 0 && 0 < t2 ? t2 : 0;
+		t = t1 < 0 ? t2 : 0; // ha t2<0 automatikusan jo
+	}
+
+	return t;
+}
+
 
 vec3 getNormal(vec3 p, vec3 dim) 
 {
@@ -66,47 +110,21 @@ vec3 grad(vec3 coords, vec3 dim)
 }
 
 
-float getT(vec3 p, vec3 v, float Tmax, float k)
+float getT(vec3 p, vec3 v, float k)
 {
-	float Inf = Tmax;
-	float a = abs(k);
-	float b = 2*(abs(k)-0.5);
-	float c = -k;
-	float e1 = a*v.x*v.x+a*v.z*v.z+b*v.y*v.y;
-	float e2 = 2*a*(p.x*v.x+p.z*v.z)+2*b*p.y*v.y+c*v.y;
-	float e3 = a*(p.x*p.x+p.z*p.z) + b*p.y*p.y+c*p.y;
-	float d = e2*e2-4*e1*e3;
-	float tmin = -Tmax-1;
-	float tmax = Tmax+1;
-	if (d >= 0) {
-		float t1 = (-e2-sqrt(d))/2.0/e1;
-		float t2 = (-e2+sqrt(d))/2.0/e1;
-		tmin = (abs(k) <= 0.5) ? (SGN((p+v*min(t1,t2)).y) != SGN(k) ? -Inf-1 : min(t1,t2)) : min(t1,t2);
-		tmax = (abs(k) <= 0.5) ? (SGN((p+v*max(t1,t2)).y) != SGN(k) ?  Inf+1 : max(t1,t2)) : max(t1,t2);
-	}
+	vec3 ABC = getABC(k);
+	vec2 t12 = intersectQuadric(ABC, p, v);
+	float t1 = t12.x, t2 = t12.y;
+	
+	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
+	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
+	float d = (t1 == -inf && t2 == inf) ? -1 : 1;
 	float t = 0;
-	if (k < -0.5) {
-		if (d < 0 || tmin > 0 || tmax < 0) t = 0;
-		else t = tmax;
-	} else if (k < 0) {
-		if (tmin > 0 && tmax > Inf) t = tmin;
-		else if (tmax < 0 && tmin < -Inf) t = Inf;
-		else if (tmin < 0 && tmin > -Inf && tmax < Inf && tmax > 0) t = tmax;
-		else t = 0;
-	} else if (k < 0.5) {
-		if (tmin < -Inf && tmax > Inf) t = Inf;
-		else if (tmin < -Inf && tmax > 0) t = tmax;
-		else if (tmin < 0 && tmax > Inf) t = Inf;
-		else if (tmin > 0 && tmax > Inf) t = 0;
-		else if (tmin < -Inf && tmax < 0) t = 0;
-		else if (tmax < 0) t = Inf;
-		else if (tmin > 0) t = tmin;
-		else t = 0;
-	} else {
-		if (d < 0 || tmax < 0) t = Inf;
-		else if (tmin > 0) t = tmin;
-		else t = 0;
-	}
+	if (k < 0) {
+		if (t1 > 0 && t2 == inf) t = t1;
+		else if (t2 < 0 && t1 == -inf) t = inf;
+		else if (t1 < 0 && t1 > -inf && t2 < inf && t2 > 0) t = t2;
+	} else  t = t1 > 0 ? (t2 == inf ? 0 : t1) : (t1 > -inf && t2 < inf ? (t2 < 0 ? inf : 0) : t2);
 	return t;
 }
 
@@ -148,7 +166,7 @@ TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
 		ivec3 c = ivec3(round(p));
 		k = texelFetch(eccentricity, clamp(ivec3(p+(N-vec3(2))/2.0), ivec3(0), N-ivec3(2)), 0).r;
 		mat3 rot = getRotation(dir);
-		float t = getT(rot*(p-c), rot*ray.V, ray.Tmax, k);
+		float t = getT(rot*(p-c), rot*ray.V, k);
 		d = max(t, SDF(p));
 		ret.T += d;
         ++i;
