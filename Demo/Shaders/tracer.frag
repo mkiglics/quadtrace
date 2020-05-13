@@ -1,6 +1,17 @@
 #version 450
 
 #define SGN(a) (a < 0 ? -1 : 1)
+//#define S 1.0
+
+vec3 l2g(ivec3 p, ivec3 n)
+{
+	return (p-(n-vec3(1))/2.0);
+}
+
+ivec3 g2l(vec3 p, ivec3 n)
+{
+	return clamp(ivec3(round(p + (n-vec3(1))/2.0)), ivec3(0), ivec3(n-ivec3(1)));
+}
 
 struct Ray
 {
@@ -49,23 +60,23 @@ mat3 getRotation(vec3 normal)
 	return mat3(1) + m + m * m / (1 + c);
 }
 
+const float inf = 1. / 0.; // at least OpenGL 4.1
 
-float getK(mat3 rot, vec3 surfaceDir)
+vec2 solveQuadratic(float a, float b, float c)
 {
-	vec3 p = rot * surfaceDir;
-	float t = atan(p.y / sqrt(p.x * p.x + p.z * p.z));
-	float st = sin(t), ct = cos(t);
-	float a = ct * ct + 2 * st * st;
-	float b = -st * st;
-	float c = p.y / st / st;
-	float k1 = b * c / (1 + a * c);
-	float k2 = b * c / (1 - a * c);
-	return sign(k1) == sign(p.y) ? k1 : k2;
+	float d = b*b-4*a*c;
+	float t1 = (-b-SGN(b)*sqrt(d))/(2*a);
+	float t2 = c/(a*t1);
+	return d<0 ? vec2(-inf, inf) : vec2(min(t1,t2), max(t1,t2));
 }
 
 float getGeogebraK(vec2 pos)
 {	
-	if (pos.y > 0)
-		return pos.y*pos.y/( pos.x*pos.x+2*pos.y*pos.y-pos.y);
-	return pos.y*pos.y/(-pos.x*pos.x-2*pos.y*pos.y-pos.y);
+	//g = 0
+//	if (pos.y > 0)
+//		return pos.y*pos.y/( pos.x*pos.x+2*pos.y*pos.y-pos.y);
+//	return pos.y*pos.y/(-pos.x*pos.x-2*pos.y*pos.y-pos.y);
+
+	//g = -1
+	return pos.y>0 ? solveQuadratic(pos.x*pos.x, 2*pos.y*pos.y-pos.y, -pos.y*pos.y).y : solveQuadratic(pos.x*pos.x, -2*pos.y*pos.y-pos.y, -pos.y*pos.y).x;
 }

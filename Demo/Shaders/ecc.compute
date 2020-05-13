@@ -7,17 +7,17 @@ uniform sampler3D sdf_values;
 
 #define EPSILON 0.01
 #define PI 3.14159265359
-#define N 10
-#define M 10
+#define N 40
+#define M 40
 
-TraceResult sphere_trace(Ray ray, SphereTraceDesc params, vec3 dim)
+TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 {
 	TraceResult ret = TraceResult(ray.Tmin, 0);
 	float d;
 
 	int i = 0; do
 	{
-		d = texelFetch(sdf_values, clamp(ivec3(ray.P + ret.T * ray.V + dim/2), ivec3(0), ivec3(dim)), 0).r;
+		d = texelFetch(sdf_values, g2l(ray.P + ret.T * ray.V,dim), 0).r;
 		ret.T += d;
 		++i;
 	} while (
@@ -67,15 +67,16 @@ void main()
 
 	
 	vec3 norm = grad(coords, gl_NumWorkGroups.xyz);
-	vec3 s = vec3(gl_NumWorkGroups.xyz) / 2.0 - vec3(0.5);
-	vec3 p = coords - s;
+	vec3 p = l2g(coords,ivec3(gl_NumWorkGroups.xyz));
 
-	mat3 rot = getRotation(norm);
 	// approximation of k
 	float k = 1;
-	float sdfcenter = 0.5;
+	float sdfcenter = 0.0;
 
-
+	if (texelFetch(sdf_values, g2l(p, ivec3(gl_NumWorkGroups.xyz) + ivec3(1)), 0).r <= 0) {
+		imageStore(ecc, coords, vec4(-3));
+		return;
+	}
 	for (int i = 0; i < N; ++i)
 	{
 		for (int j = 0; j <= M; ++j)
@@ -87,21 +88,26 @@ void main()
 				0.1,
 				d,
 				100);
-			TraceResult res = sphere_trace(r, SphereTraceDesc(0.1, 100), gl_NumWorkGroups.xyz);
-			if (bool(res.flags & 1)) { continue; }
+			TraceResult res = sphere_trace(r, SphereTraceDesc(0.03, 100), ivec3(gl_NumWorkGroups.xyz)+ivec3(1));
+			if (bool(res.flags & 1) || bool(res.flags & 4)) { continue; }
 
 			float scale = res.T; //unbounding sphere center is at (0,0.5)
 			float cosPhi = dot(d, norm);
-			float sinPhi = sqrt(1 - cosPhi * cosPhi);
+			float sinPhi = length(cross(d, norm));
 			vec2 geogebrapos = vec2(sinPhi, cosPhi) * scale;
-			k = min(k, mix(getGeogebraK(geogebrapos), -1.0, 0.1));
+			k = min(k, mix(getGeogebraK(geogebrapos), -1.0, 0.01));
 		//	break;
 		}
 		//break;
 	}
 
-	imageStore(ecc, coords, vec4(clamp(k, -1, 1)));
+	imageStore(ecc, coords, vec4(k));
 }
+
+
+
+
+
 
 
 

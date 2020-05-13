@@ -22,9 +22,9 @@ void recompute(df::ComputeProgramEditor& program, df::ComputeProgramEditor& sdfP
 
 int main(int argc, char* args[])
 {
-	df::Sample sam; //handles Events and such
+	df::Sample sam("Quad Tracing", 1024, 1024, 0); //handles Events and such
 	df::Camera cam;
-	cam.SetView(glm::vec3(5, 5, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	cam.SetView(glm::vec3(7.7, 7, 8), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	cam.SetSpeed(15);
 	sam.AddHandlerClass(cam, 5);
 	sam.AddStaticHandlerClass<df::ImGuiHandler>(10);
@@ -49,19 +49,45 @@ int main(int argc, char* args[])
 
 	recompute(eccComputeProgram, sdfComputeProgram, sdf_values, ecc);
 
+	glm::ivec3 c = { 0,0,0 };
+	float k = -1;
+	float v = 0;
+	int iter = 100;
+	int quad_trace = 0;
+
+	auto start = std::chrono::steady_clock::now();
+	long fr = 0;
+	double last[2];
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
 			cam.Update();
-
-			df::Backbuffer << df::Clear() << program << "k" << cosf(SDL_GetTicks()/1000.f) << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up"
-					<< cam.GetUp() << "windowSize" << glm::vec2(cam.GetSize().x,cam.GetSize().y) << "eccentricity" << ecc << "N" << glm::ivec3(N_x, N_y, N_z) << "sdf_values" << sdf_values;
+			
+			df::Backbuffer << df::Clear() << program << "k" << cosf(SDL_GetTicks() / 1000.f) << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up"
+				<< cam.GetUp() << "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y) << "eccentricity" << ecc << "N" << glm::ivec3(N_x, N_y, N_z) << "sdf_values" << sdf_values
+				<< "evalcoord" << c << "_k" << k << "_v" << v << "max_iter" << iter << "quad" << quad_trace;
 			program << df::NoVao(GL_TRIANGLE_STRIP, 4);	
 
 			GL_CHECK;
 			program.Render(); //only the UI!!
 			eccComputeProgram.Render(); sdfComputeProgram.Render();
+			ImGui::SliderInt3("C", &c.x, 0, N_x-1);
+			ImGui::SliderFloat("k", &k, -1, 1);
+			ImGui::SliderFloat("v", &v, 0, 20);
+			ImGui::SliderInt("max iteration", &iter, 1, 100);
+			if (ImGui::Selectable("Quad tracing", quad_trace)) quad_trace = !quad_trace;
 			if (ImGui::Button("Recompute")) {
 				recompute(eccComputeProgram, sdfComputeProgram, sdf_values, ecc);
+			}
+
+			++fr;
+			if (fr == 1000) {
+				auto end = std::chrono::steady_clock::now();
+				std::chrono::duration<double> time = end - start;
+				last[quad_trace] = time.count();
+				if (quad_trace) std::cout << last[1] / last[0] << std::endl;
+				quad_trace = !quad_trace;
+				fr = 0;
+				start = std::chrono::steady_clock::now();
 			}
 		}
 	);
