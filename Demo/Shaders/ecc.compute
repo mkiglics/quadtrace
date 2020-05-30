@@ -7,8 +7,8 @@ uniform sampler3D sdf_values;
 
 #define EPSILON 0.01
 #define PI 3.14159265359
-#define N 40
-#define M 40
+#define N 70
+#define M 70
 
 TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 {
@@ -18,23 +18,23 @@ TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 	int i = 0; do
 	{
 		d = texelFetch(sdf_values, g2l(ray.P + ret.T * ray.V,dim), 0).r;
+		//d = texture(sdf_values, g2l(ray.P + ret.T * ray.V, dim) / vec3(dim)).r;
 		ret.T += d;
 		++i;
 	} while (
 		ret.T < ray.Tmax &&       		// Stay within bound box
-		d	  > params.epsilon* ret.T&&	// Stop if cone is close to surface
+		d	  > params.epsilon&&	// Stop if cone is close to surface
 		i < params.maxiters	        	// Stop if too many iterations
 		);
 
 	ret.flags = int(ret.T >= ray.Tmax)
-		| (int(d <= params.epsilon * ret.T) << 1)
+		| (int(d <= params.epsilon) << 1)
 		| (int(i >= params.maxiters) << 2);
 	return ret;
 }
 
 vec3 grad(vec3 coords, vec3 dim)
 {
-	//TODO x, y or z == 0
 	float[8] vert;
 	float[6] c;
 	for (int x = 0; x < 2; ++x)
@@ -47,12 +47,12 @@ vec3 grad(vec3 coords, vec3 dim)
 			}
 		}
 	}
-	c[0] = (vert[0] + vert[1] + vert[2] + vert[3]) / 4;
-	c[1] = (vert[4] + vert[5] + vert[6] + vert[7]) / 4;
-	c[2] = (vert[0] + vert[1] + vert[4] + vert[5]) / 4;
-	c[3] = (vert[6] + vert[7] + vert[2] + vert[3]) / 4;
-	c[4] = (vert[0] + vert[4] + vert[2] + vert[6]) / 4;
-	c[5] = (vert[5] + vert[1] + vert[7] + vert[3]) / 4;
+	c[0] = (vert[0] + vert[1] + vert[2] + vert[3]);
+	c[1] = (vert[4] + vert[5] + vert[6] + vert[7]);
+	c[2] = (vert[0] + vert[1] + vert[4] + vert[5]);
+	c[3] = (vert[6] + vert[7] + vert[2] + vert[3]);
+	c[4] = (vert[0] + vert[4] + vert[2] + vert[6]);
+	c[5] = (vert[5] + vert[1] + vert[7] + vert[3]);
 
 
 	vec3 norm = vec3(c[0] - c[1], c[2] - c[3], c[4] - c[5]);
@@ -85,10 +85,10 @@ void main()
 			float v = PI * j / float(M);
 			vec3 d = normalize(vec3(cos(u) * sin(v), cos(v), sin(u) * sin(v)));
 			Ray r = Ray(p + sdfcenter*norm,
-				0.1,
+				0.0,
 				d,
 				100);
-			TraceResult res = sphere_trace(r, SphereTraceDesc(0.03, 100), ivec3(gl_NumWorkGroups.xyz)+ivec3(1));
+			TraceResult res = sphere_trace(r, SphereTraceDesc(1, 100), ivec3(gl_NumWorkGroups.xyz)+ivec3(1));
 			if (bool(res.flags & 1) || bool(res.flags & 4)) { continue; }
 
 			float scale = res.T; //unbounding sphere center is at (0,0.5)
@@ -103,6 +103,25 @@ void main()
 
 	imageStore(ecc, coords, vec4(k));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

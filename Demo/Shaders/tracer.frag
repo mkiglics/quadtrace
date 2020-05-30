@@ -3,11 +3,13 @@
 #define SGN(a) (a < 0 ? -1 : 1)
 //#define S 1.0
 
+//texture to global coordinates
 vec3 l2g(ivec3 p, ivec3 n)
 {
 	return (p-(n-vec3(1))/2.0);
 }
 
+//global to texture coordinates
 ivec3 g2l(vec3 p, ivec3 n)
 {
 	return clamp(ivec3(round(p + (n-vec3(1))/2.0)), ivec3(0), ivec3(n-ivec3(1)));

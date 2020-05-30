@@ -8,9 +8,13 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{4ebf0362-f5a1-4f42-a737-2285308b02d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Examples">
+      <UniqueIdentifier>{520fdbdf-c316-4c5f-8007-5769630f9359}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\frag.frag">
@@ -37,5 +41,20 @@
     <None Include="Shaders\sdf.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\Examples\default.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\Examples\ring.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\Examples\tower.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\Examples\spherebox.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="QuadricRender.h" />
   </ItemGroup>
 </Project>
