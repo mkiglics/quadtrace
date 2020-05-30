@@ -94,6 +94,12 @@ bool QuadricRender::Link()
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
 	*program << "Shaders/sdf.frag"_frag << "Shaders/sdf"_frag << "Shaders/tracer.frag"_frag << "Shaders/vert.vert"_vert << "Shaders/frag.frag"_frag << df::LinkProgram;
+	if (program->GetErrors().size() > 0)
+	{
+		hasError = true;
+		errosMsg = program->GetErrors();
+		return false;
+	}
 	Preprocess();
 	hasError = false;
 	return true;
@@ -104,7 +110,7 @@ void QuadricRender::RenderUI()
 	ImGui::SetNextWindowSize({ 640, 480 }, ImGuiCond_FirstUseEver);
 	ImGui::Begin("SDF editor");
 	ImGui::Text("SDF Editor");
-	ImGui::InputTextMultiline("", &text[0], 4096, { 640, 300 });
+	ImGui::InputTextMultiline("", &text[0], bufferSize, { 640, 300 });
 	if (ImGui::Button("Compile", { 640, 30 }))
 	{
 		if (SaveSDF())
@@ -123,7 +129,9 @@ void QuadricRender::RenderUI()
 		ImGui::SameLine();
 	}
 	ImGui::NewLine();
+#ifdef DEBUG
 	if (ImGui::Button(useQuadricTrace ? "Render using quadric tracing" : "Render using sphere tracing")) useQuadricTrace = !useQuadricTrace;
+#endif
 	if (hasError)
 		ImGui::TextColored({ 255, 0, 0, 255 }, errosMsg.c_str());
 	ImGui::End();
@@ -142,7 +150,7 @@ bool QuadricRender::LoadSDF(const char* name)
 	std::string contents((std::istreambuf_iterator<char>(in)),
 		std::istreambuf_iterator<char>());
 	text = std::vector<char>(contents.begin(), contents.end());
-	text.resize(4096);
+	text.resize(bufferSize);
 	hasError = false;
 	return true; 
 }

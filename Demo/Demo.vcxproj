@@ -31,7 +31,7 @@
     <ProjectGuid>{C3036A30-B921-4DBD-82EE-6DD83C198CB6}</ProjectGuid>
     <RootNamespace>Runtime</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Demo</ProjectName>
+    <ProjectName>QuadricTrace</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -79,6 +79,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LibraryPath>T:\DragonflyPack\LibBin;$(SolutionDir)Dragonfly\lib\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <IncludePath>T:\DragonflyPack\includes;$(SolutionDir)Dragonfly\include;$(IncludePath)</IncludePath>
+    <TargetName>QuadricTrace</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -136,8 +137,6 @@
     <None Include="Shaders\Examples\spherebox.glsl" />
     <None Include="Shaders\Examples\tower.glsl" />
     <None Include="Shaders\frag.frag" />
-    <None Include="Shaders\postprocess.frag" />
-    <None Include="Shaders\postprocess.vert" />
     <None Include="Shaders\sdf.frag" />
     <None Include="Shaders\tracer.frag" />
     <None Include="Shaders\vert.vert" />

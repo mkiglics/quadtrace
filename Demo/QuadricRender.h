@@ -35,11 +35,12 @@ private:
 	df::ComputeProgramEditor* sdfComputeProgram;
 	df::ComputeProgramEditor* eccComputeProgram;
 
-	df::Sample sam = df::Sample("Quad Tracing", 640, 480, 0); //handles Events and such
+	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, 0); //handles Events and such
 	df::Camera cam;
 
+	const int bufferSize = 8192;
 	const std::vector<std::pair<std::string, std::string>> examples = { 
-		{"Default", "Shaders/Examples/default.glsl"},
+		{"Sphere", "Shaders/Examples/default.glsl"},
 		{"Ring", "Shaders/Examples/ring.glsl"},
 		{"Sphere + Box", "Shaders/Examples/spherebox.glsl"},
 		{"Tower", "Shaders/Examples/tower.glsl"}

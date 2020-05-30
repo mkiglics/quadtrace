@@ -177,7 +177,7 @@ void main()
 
 	TraceResult res = quad?quad_trace(r, SphereTraceDesc(0.001, max_iter)):sphere_trace(r, SphereTraceDesc(0.001, max_iter));
 	if (bool(res.flags & 1))		{fs_out_col = vec4(0,0,0,1); return;}
-	if (bool(res.flags & 4))		{fs_out_col = vec4(1,0,0,1); return;}
+//	if (bool(res.flags & 4))		{fs_out_col = vec4(1,0,0,1); return;}
 	vec3 p = eye + r.V*res.T;
 
 	vec3 ambient = vec3(0.1, 0.1, 0.1);
@@ -188,6 +188,7 @@ void main()
 	vec3 col = ambient+diffuse;
 	fs_out_col = vec4(col, 1);
 }
+
 
 
 

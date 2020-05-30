@@ -1,3 +1,3 @@
 float SDF(vec3 p) {
-	return add(sphere(p, vec3(0), 6), box(p, vec3(5)));
+	return sub(sphere(p, vec3(1,1,1), 5), box(p, vec3(5)));
 }
