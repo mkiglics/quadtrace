@@ -6,13 +6,13 @@
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
 
-#define DEBUG
+//#define DEBUG
 
 class QuadricRender {
 public:
-	QuadricRender() {}
+	QuadricRender() :text({ ' ' }) {}
 	~QuadricRender();
-	void Init(GLuint);
+	void Init(int);
 	void Render();
 private:
 	void Preprocess();
@@ -22,7 +22,7 @@ private:
 	bool SaveSDF();
 
 	bool hasError = false;
-	std::string errosMsg;
+	std::string errosMsg = "";
 
 	glm::ivec3 grid;
 	std::vector<char> text;

@@ -1,4 +1,4 @@
-#version 410
+#version 450
 
 float sphere(vec3 p, vec3 c, float r) {
 	return length(p - c) - r;
@@ -43,39 +43,17 @@ float pyramid( vec3 p, float h)
   return sqrt( (d2+q.z*q.z)/m2 ) * sign(max(q.z,-p.y));
 }
 
-float add(float d1, float d2) 
+float Union(float d1, float d2) 
 {
 	return min(d1,d2);
 }
 
-float sub(float d1, float d2) 
+float Sub(float d1, float d2) 
 {
 	return max(-d1,d2);
 }
 
-float intersect(float d1, float d2)
+float Intersect(float d1, float d2)
 {
 	return max(d1,d2);
 }
-
-float displacement(vec3 p)
-{ 
-	return 0.01*sin(p.x*40)+0.01*sin(p.y*20+p.z*100);
-}
-
-float displace( in float primitive, in vec3 p )
-{
-    float d1 = primitive;
-    float d2 = displacement(p);
-    return d1+d2;
-}
-
-
-
-
-
-
-
-
-
-

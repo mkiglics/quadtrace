@@ -7,7 +7,7 @@ QuadricRender::~QuadricRender()
 	delete sdfComputeProgram;
 }
 
-void QuadricRender::Init(GLuint gridSize = 16)
+void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
 
@@ -22,7 +22,7 @@ void QuadricRender::Init(GLuint gridSize = 16)
 	sam.AddStaticHandlerClass<df::ImGuiHandler>(10);
 
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/sdf.frag"_frag << "Shaders/sdf"_frag << "Shaders/tracer.frag"_frag << "Shaders/vert.vert"_vert << "Shaders/frag.frag"_frag << df::LinkProgram;
+	*program << "Shaders/sdf.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracer.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 
 	int w = df::Backbuffer.getWidth(), h = df::Backbuffer.getHeight();
 	auto frameBuff = df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1);
@@ -31,10 +31,10 @@ void QuadricRender::Init(GLuint gridSize = 16)
 	eccentricityTexture = df::Texture3D<float>(grid.x - 1, grid.y - 1, grid.z - 1);
 
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf.frag"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
 
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/tracer.frag"_comp << "Shaders/ecc.compute"_comp << df::LinkProgram;
+	*eccComputeProgram << "Shaders/tracer.glsl"_comp << "Shaders/ecc.compute"_comp << df::LinkProgram;
 
 	sam.AddResize([&](int w, int h) {frameBuff = frameBuff.MakeResized(w, h); });
 
@@ -81,23 +81,23 @@ void QuadricRender::Render()
 
 bool QuadricRender::Link()
 {
-
+	hasError = false;
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf.frag"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
 	if (sdfComputeProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
 		errosMsg = sdfComputeProgram->GetErrors();
-		return false;
 	}
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/sdf.frag"_frag << "Shaders/sdf"_frag << "Shaders/tracer.frag"_frag << "Shaders/vert.vert"_vert << "Shaders/frag.frag"_frag << df::LinkProgram;
-	if (program->GetErrors().size() > 0)
+	*program << "Shaders/sdf.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracer.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
-		errosMsg = program->GetErrors();
+		if (program->GetErrors().size() > 0)
+			errosMsg = program->GetErrors();
 		return false;
 	}
 	Preprocess();
@@ -139,7 +139,6 @@ void QuadricRender::RenderUI()
 
 bool QuadricRender::LoadSDF(const char* name) 
 { 
-	text = { ' ' };
 	std::ifstream in(name);
 	if (!in.is_open())
 	{

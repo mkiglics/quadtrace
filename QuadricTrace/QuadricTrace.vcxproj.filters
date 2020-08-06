@@ -17,9 +17,6 @@
     <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\frag.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\vert.vert">
       <Filter>Shaders</Filter>
     </None>
@@ -27,12 +24,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\ecc.compute">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\tracer.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\sdf.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\Examples\default.glsl">
@@ -46,6 +37,15 @@
     </None>
     <None Include="Shaders\Examples\spherebox.glsl">
       <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\fragment.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\tracer.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\sdf.glsl">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-#version 410
+#version 450
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -18,7 +18,6 @@ TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 	int i = 0; do
 	{
 		d = texelFetch(sdf_values, g2l(ray.P + ret.T * ray.V,dim), 0).r;
-		//d = texture(sdf_values, g2l(ray.P + ret.T * ray.V, dim) / vec3(dim)).r;
 		ret.T += d;
 		++i;
 	} while (
@@ -69,7 +68,6 @@ void main()
 	vec3 norm = grad(coords, gl_NumWorkGroups.xyz);
 	vec3 p = l2g(coords,ivec3(gl_NumWorkGroups.xyz));
 
-	// approximation of k
 	float k = 1;
 	float sdfcenter = 0.0;
 
@@ -91,14 +89,12 @@ void main()
 			TraceResult res = sphere_trace(r, SphereTraceDesc(1, 100), ivec3(gl_NumWorkGroups.xyz)+ivec3(1));
 			if (bool(res.flags & 1) || bool(res.flags & 4)) { continue; }
 
-			float scale = res.T; //unbounding sphere center is at (0,0.5)
+			float scale = res.T;
 			float cosPhi = dot(d, norm);
 			float sinPhi = length(cross(d, norm));
-			vec2 geogebrapos = vec2(sinPhi, cosPhi) * scale;
-			k = min(k, mix(getGeogebraK(geogebrapos), -1.0, 0.01));
-		//	break;
+			vec2 pos2d = vec2(sinPhi, cosPhi) * scale;
+			k = min(k, mix(getK(pos2d), -1.0, 0.01));
 		}
-		//break;
 	}
 
 	imageStore(ecc, coords, vec4(k));

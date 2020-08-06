@@ -1,4 +1,4 @@
-#version 410
+#version 450
 
 const float MAX_ITERATIONS = 100;
 const float MAX_DISTANCE = 10000;
@@ -121,21 +121,6 @@ TraceResult sphere_trace(in Ray ray, in SphereTraceDesc params)
               | (int(i >= params.maxiters) << 2);
     return ret;
 }
-
-float softshadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k )
-{
-    float res = 1.0;
-    for( float t=mint; t<maxt; )
-    {
-        float h = SDF(ro + rd*t);
-        if( h<0.0001 )
-            return 0.0;
-        res = min( res, k*h/t );
-        t += h;
-    }
-    return res;
-}
-
 
 TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
 {

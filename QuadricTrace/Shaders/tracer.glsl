@@ -72,13 +72,7 @@ vec2 solveQuadratic(float a, float b, float c)
 	return d<0 ? vec2(-inf, inf) : vec2(min(t1,t2), max(t1,t2));
 }
 
-float getGeogebraK(vec2 pos)
+float getK(vec2 pos)
 {	
-	//g = 0
-//	if (pos.y > 0)
-//		return pos.y*pos.y/( pos.x*pos.x+2*pos.y*pos.y-pos.y);
-//	return pos.y*pos.y/(-pos.x*pos.x-2*pos.y*pos.y-pos.y);
-
-	//g = -1
 	return pos.y>0 ? solveQuadratic(pos.x*pos.x, 2*pos.y*pos.y-pos.y, -pos.y*pos.y).y : solveQuadratic(pos.x*pos.x, -2*pos.y*pos.y-pos.y, -pos.y*pos.y).x;
 }
