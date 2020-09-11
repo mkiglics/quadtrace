@@ -6,7 +6,7 @@
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
 
-//#define DEBUG
+#define DEBUG
 
 class QuadricRender {
 public:
@@ -43,6 +43,7 @@ private:
 		{"Sphere", "Shaders/Examples/default.glsl"},
 		{"Ring", "Shaders/Examples/ring.glsl"},
 		{"Sphere + Box", "Shaders/Examples/spherebox.glsl"},
-		{"Tower", "Shaders/Examples/tower.glsl"}
+		{"Tower", "Shaders/Examples/tower.glsl"},
+		{"Blocks", "Shaders/Examples/blocks.glsl"}
 	};
 };

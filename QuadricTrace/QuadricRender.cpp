@@ -16,13 +16,13 @@ void QuadricRender::Init(int gridSize = 16)
 		LoadSDF(examples[0].second.c_str()); SaveSDF();
 	}
 	
-	cam.SetView(glm::vec3(15.7, 15, 15), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	cam.SetView(glm::vec3(15.1, 15, 15), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	cam.SetSpeed(15);
 	sam.AddHandlerClass(cam, 5);
 	sam.AddStaticHandlerClass<df::ImGuiHandler>(10);
 
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/sdf.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracer.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 
 	int w = df::Backbuffer.getWidth(), h = df::Backbuffer.getHeight();
 	auto frameBuff = df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1);
@@ -31,10 +31,10 @@ void QuadricRender::Init(int gridSize = 16)
 	eccentricityTexture = df::Texture3D<float>(grid.x - 1, grid.y - 1, grid.z - 1);
 
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/tracer.glsl"_comp << "Shaders/ecc.compute"_comp << df::LinkProgram;
+	*eccComputeProgram << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
 
 	sam.AddResize([&](int w, int h) {frameBuff = frameBuff.MakeResized(w, h); });
 
@@ -66,7 +66,7 @@ void QuadricRender::Render()
 			df::Backbuffer << df::Clear() << *program << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp() 
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "quad" << useQuadricTrace;
+				<< "render_quadric" << useQuadricTrace;
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
 
 			GL_CHECK;
@@ -84,7 +84,7 @@ bool QuadricRender::Link()
 	hasError = false;
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf.compute"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 	if (sdfComputeProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -92,7 +92,7 @@ bool QuadricRender::Link()
 	}
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/sdf.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracer.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;

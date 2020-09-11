@@ -11,10 +11,8 @@ uniform ivec3 N;
 layout(location = 0) in vec2 fs_in_tex;
 out vec4 fs_out_col;
 
-uniform float _k = 1;
-uniform float _v = 1;
 uniform int max_iter = 150;
-uniform bool quad = true;
+uniform bool render_quadric = true;
 uniform float delta = 0.8;
 
 uniform vec3 lightPos = vec3(50, 50, 50);
@@ -23,21 +21,6 @@ uniform vec3 lightPos = vec3(50, 50, 50);
 float tanfov = tan(radians(45)/2);
 uniform vec3 eye, at, up;
 uniform vec2 windowSize;
-
-uniform ivec3 evalcoord;
-
-vec3 getABC(float k)
-{
-	return vec3(k*k, 2*abs(k)-1, -k);
-}
-
-vec2 intersectQuadric(vec3 ABC, vec3 p, vec3 v)
-{
-	float a = dot(ABC.xyx*v,v);
-	float b = 2*dot(ABC.xyx*v,p) + ABC.z*v.y;
-	float c = dot(ABC.xyx*p,p) + ABC.z*p.y;
-	return solveQuadratic(a,b,c);
-}
 
 
 vec3 getNormal(vec3 p, vec3 dim) 
@@ -49,7 +32,7 @@ vec3 getNormal(vec3 p, vec3 dim)
     ));
 }
 
-vec3 grad(in ivec3 coords)
+vec3 gradient(in ivec3 coords)
 {
 	float[8] vert;
 	float[6] c;
@@ -76,30 +59,6 @@ vec3 grad(in ivec3 coords)
 }
 
 
-float getT(in vec3 p, in vec3 v, in float k)
-{
-	if (k < -0.99) return 0;
-	vec3 ABC = getABC(k);
-	vec2 t12 = intersectQuadric(ABC, p, v);
-	float t1 = t12.x, t2 = t12.y;
-	
-	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
-	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
-	float t = 0;
-	if (k < 0) {
-		if (t2 == inf) t = t1;
-		else if (t1<0 && t1>-inf) t = t2;
-		else if (t2 > 0) t = 0;
-		else t = inf;
-	} else  {
-		if (t1==-inf) t = t2;
-		else if (t2>0 && t2<inf) t = t1;
-		else if (t1<0) t = inf;
-	}
-	return t;
-}
-
-
 TraceResult sphere_trace(in Ray ray, in SphereTraceDesc params)
 {
     TraceResult ret = TraceResult(ray.Tmin, 0);
@@ -122,7 +81,7 @@ TraceResult sphere_trace(in Ray ray, in SphereTraceDesc params)
     return ret;
 }
 
-TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
+TraceResult quadric_trace(in Ray ray, in SphereTraceDesc params)
 {
     TraceResult ret = TraceResult(ray.Tmin, 0);
     float d;
@@ -134,14 +93,20 @@ TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
     int i = 0; do
     {
 		p = ray.P+ret.T*ray.V;
-		c =  g2l(p, N-ivec3(1));
-		dir = grad(c);
+
+		//center of the current cell
+		c =  globalToTexel(p, N-ivec3(1));
+		//direction of the surface
+		dir = gradient(c);
+		//parameter of the quadric
 		k = texelFetch(eccentricity, c, 0).r;
 		rot = getRotation(dir);
-		t = getT(rot*(p-round(p)), rot*ray.V, k);
-		d = max(t, texelFetch(sdf_values, g2l(p, N), 0).r-0.5);
-		if (d<delta)
-		d = max(t, SDF(ray.P+ret.T*ray.V));
+		//the parameter of the closest intersection point
+		t = intersectQuadric(rot*(p-round(p)), rot*ray.V, k);
+		d = max(t, texelFetch(sdf_values, globalToTexel(p, N), 0).r-0.8);
+		if (d<delta) {						// use SDF if too close to surface
+			d = max(t, SDF(ray.P+ret.T*ray.V));
+		}
 		ret.T += d;
         ++i;
     } while (
@@ -156,23 +121,34 @@ TraceResult quad_trace(in Ray ray, in SphereTraceDesc params)
     return ret;
 }
 
-void main()
+vec3 lighting(in vec3 p)
 {
-	Ray r = Camera(fs_in_tex, eye, at, windowSize);
-
-	TraceResult res = quad?quad_trace(r, SphereTraceDesc(0.001, max_iter)):sphere_trace(r, SphereTraceDesc(0.001, max_iter));
-	if (bool(res.flags & 1))		{fs_out_col = vec4(0,0,0,1); return;}
-//	if (bool(res.flags & 4))		{fs_out_col = vec4(1,0,0,1); return;}
-	vec3 p = eye + r.V*res.T;
 
 	vec3 ambient = vec3(0.1, 0.1, 0.1);
 	vec3 n = getNormal(p,N);
 	vec3 toLight = -normalize(p - lightPos);
 	vec3 diffuse = vec3(0.6, 0.6, 0.6) * clamp(dot(n, toLight), 0, 1);
+	vec3 lightDir = p-lightPos;
+	vec3 ref = normalize(reflect(lightDir, n));
+	vec3 e = normalize(eye - p);
+	vec3 specular = vec3(1) * pow(clamp(dot(ref,e), 0, 1), 32);
 
-	vec3 col = ambient+diffuse;
-	fs_out_col = vec4(col, 1);
+	return ambient + diffuse + specular;
 }
+
+void main()
+{
+	Ray r = Camera(fs_in_tex, eye, at, windowSize);
+
+	TraceResult res = render_quadric?quadric_trace(r, SphereTraceDesc(0.001, max_iter)):sphere_trace(r, SphereTraceDesc(0.001, max_iter));
+	if (bool(res.flags & 1))		{fs_out_col = vec4(0,0,0,1); return;}
+	if (bool(res.flags & 4))		{fs_out_col = vec4(1,0,0,1); return;}
+	vec3 p = eye + r.V*res.T;
+
+	vec3 color = lighting(p);
+	fs_out_col = vec4(color, 1);
+}
+
 
 
 

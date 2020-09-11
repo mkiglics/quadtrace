@@ -3,14 +3,14 @@
 #define SGN(a) (a < 0 ? -1 : 1)
 //#define S 1.0
 
-//texture to global coordinates
-vec3 l2g(ivec3 p, ivec3 n)
+//converts texel coordinates (int in range [0, n-1]) to global floats
+vec3 texelToGlobal(ivec3 p, ivec3 n)
 {
 	return (p-(n-vec3(1))/2.0);
 }
 
-//global to texture coordinates
-ivec3 g2l(vec3 p, ivec3 n)
+//converts global float coordinates to texel postions
+ivec3 globalToTexel(vec3 p, ivec3 n)
 {
 	return clamp(ivec3(round(p + (n-vec3(1))/2.0)), ivec3(0), ivec3(n-ivec3(1)));
 }
@@ -50,6 +50,10 @@ Ray Camera(vec2 pix, vec3 eye, vec3 at, vec2 dim)
                100.);						//maxT
 }
 
+/*
+	Returns a rotation matrix for rotating normal to (0, length(normal), 0)
+	using Rodrigues' formula
+*/
 mat3 getRotation(vec3 normal)
 {
 	vec3 y = vec3(0, 1, 0);
@@ -64,6 +68,7 @@ mat3 getRotation(vec3 normal)
 
 const float inf = 1. / 0.; // at least OpenGL 4.1
 
+/* Numerically stable quadratic equation solver */
 vec2 solveQuadratic(float a, float b, float c)
 {
 	float d = b*b-4*a*c;
@@ -72,6 +77,7 @@ vec2 solveQuadratic(float a, float b, float c)
 	return d<0 ? vec2(-inf, inf) : vec2(min(t1,t2), max(t1,t2));
 }
 
+// returns the quadric's parameter
 float getK(vec2 pos)
 {	
 	return pos.y>0 ? solveQuadratic(pos.x*pos.x, 2*pos.y*pos.y-pos.y, -pos.y*pos.y).y : solveQuadratic(pos.x*pos.x, -2*pos.y*pos.y-pos.y, -pos.y*pos.y).x;

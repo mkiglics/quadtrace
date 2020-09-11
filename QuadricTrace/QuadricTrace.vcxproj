@@ -132,22 +132,24 @@
     <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\Examples\blocks.glsl" />
     <None Include="Shaders\Examples\default.glsl" />
     <None Include="Shaders\Examples\ring.glsl" />
     <None Include="Shaders\Examples\spherebox.glsl" />
     <None Include="Shaders\Examples\tower.glsl" />
     <None Include="Shaders\fragment.frag" />
-    <None Include="Shaders\sdf.glsl" />
-    <None Include="Shaders\tracer.glsl" />
+    <None Include="Shaders\quadric.glsl" />
+    <None Include="Shaders\sdf_common.glsl" />
+    <None Include="Shaders\tracing.glsl" />
     <None Include="Shaders\vert.vert" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\sdf.compute">
+    <None Include="Shaders\sdf_precompute.glsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\ecc.compute">
+    <None Include="Shaders\eccentricity.glsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

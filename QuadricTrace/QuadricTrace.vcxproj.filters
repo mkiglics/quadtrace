@@ -20,12 +20,6 @@
     <None Include="Shaders\vert.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\sdf.compute">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\ecc.compute">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\Examples\default.glsl">
       <Filter>Shaders\Examples</Filter>
     </None>
@@ -41,10 +35,22 @@
     <None Include="Shaders\fragment.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\tracer.glsl">
+    <None Include="Shaders\Examples\blocks.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\sdf_common.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\sdf.glsl">
+    <None Include="Shaders\sdf_precompute.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\quadric.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\eccentricity.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\tracing.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
