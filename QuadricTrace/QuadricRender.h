@@ -35,7 +35,7 @@ private:
 	df::ComputeProgramEditor* sdfComputeProgram;
 	df::ComputeProgramEditor* eccComputeProgram;
 
-	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, 0); //handles Events and such
+	df::Sample sam = df::Sample("Quadric Tracing", 640, 480); //handles Events and such
 	df::Camera cam;
 
 	const int bufferSize = 8192;

@@ -19,7 +19,7 @@ void QuadricRender::Init(int gridSize = 16)
 	cam.SetView(glm::vec3(15.1, 15, 15), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	cam.SetSpeed(15);
 	sam.AddHandlerClass(cam, 5);
-	sam.AddStaticHandlerClass<df::ImGuiHandler>(10);
+	sam.AddHandlerClass<df::ImGuiHandler>(10);
 
 	program = new df::ShaderProgramEditorVF("Shader Editor");
 	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
