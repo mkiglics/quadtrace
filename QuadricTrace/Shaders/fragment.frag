@@ -148,22 +148,3 @@ void main()
 	vec3 color = lighting(p);
 	fs_out_col = vec4(color, 1);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
