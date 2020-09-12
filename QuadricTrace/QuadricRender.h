@@ -5,6 +5,8 @@
 #include <Dragonfly/detail/vao.h> //will be replaced
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
+#include "CodeGen/demo.h"
+#include "CodeGen/ui.h"
 
 #define DEBUG
 
@@ -23,7 +25,6 @@ private:
 
 	bool hasError = false;
 	std::string errosMsg = "";
-
 	glm::ivec3 grid;
 	std::vector<char> text;
 	int useQuadricTrace = 1;
@@ -35,7 +36,7 @@ private:
 	df::ComputeProgramEditor* sdfComputeProgram;
 	df::ComputeProgramEditor* eccComputeProgram;
 
-	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, 0); //handles Events and such
+	df::Sample sam = df::Sample("Quadric Tracing", 640, 480); //handles Events and such
 	df::Camera cam;
 
 	const int bufferSize = 8192;
@@ -46,4 +47,7 @@ private:
 		{"Tower", "Shaders/Examples/tower.glsl"},
 		{"Blocks", "Shaders/Examples/blocks.glsl"}
 	};
+
+	//codegen
+	MyExpr *csg_tree;
 };

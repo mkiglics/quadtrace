@@ -10,6 +10,9 @@ QuadricRender::~QuadricRender()
 void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
+	
+	csg_tree = demo_expr();
+	build_kernel("Shaders/sdf", csg_tree); // generates the function
 
 	if (!LoadSDF("Shaders/sdf"))
 	{
@@ -19,13 +22,10 @@ void QuadricRender::Init(int gridSize = 16)
 	cam.SetView(glm::vec3(15.1, 15, 15), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	cam.SetSpeed(15);
 	sam.AddHandlerClass(cam, 5);
-	sam.AddStaticHandlerClass<df::ImGuiHandler>(10);
+	sam.AddHandlerClass<df::ImGuiHandler>(10);
 
 	program = new df::ShaderProgramEditorVF("Shader Editor");
 	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
-
-	int w = df::Backbuffer.getWidth(), h = df::Backbuffer.getHeight();
-	auto frameBuff = df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1);
 
 	sdfTexture = df::Texture3D<float>(grid.x, grid.y, grid.z);
 	eccentricityTexture = df::Texture3D<float>(grid.x - 1, grid.y - 1, grid.z - 1);
@@ -35,8 +35,6 @@ void QuadricRender::Init(int gridSize = 16)
 
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
 	*eccComputeProgram << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
-
-	sam.AddResize([&](int w, int h) {frameBuff = frameBuff.MakeResized(w, h); });
 
 	GL_CHECK; //extra opengl error checking in GPU Debug build configuration
 
@@ -82,6 +80,7 @@ void QuadricRender::Render()
 bool QuadricRender::Link()
 {
 	hasError = false;
+	build_kernel("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
 	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
@@ -134,6 +133,10 @@ void QuadricRender::RenderUI()
 #endif
 	if (hasError)
 		ImGui::TextColored({ 255, 0, 0, 255 }, errosMsg.c_str());
+	ImGui::End();
+
+	ImGui::Begin("CSG Editor");
+	RenderCSG_UI(*csg_tree);
 	ImGui::End();
 }
 
