@@ -13,6 +13,7 @@ void QuadricRender::Init(int gridSize = 16)
 	
 	csg_tree = demo_expr();
 	build_kernel("Shaders/sdf", csg_tree); // generates the function
+	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
 	if (!LoadSDF("Shaders/sdf"))
 	{
@@ -80,7 +81,7 @@ void QuadricRender::Render()
 bool QuadricRender::Link()
 {
 	hasError = false;
-	build_kernel("Shaders/sdf", csg_tree); // generates the function
+	build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
 	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;

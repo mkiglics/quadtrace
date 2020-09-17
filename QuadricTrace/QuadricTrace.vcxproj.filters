@@ -89,5 +89,8 @@
     <ClInclude Include="CodeGen\util.h">
       <Filter>CodeGen</Filter>
     </ClInclude>
+    <ClInclude Include="CodeGen\Footmap.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

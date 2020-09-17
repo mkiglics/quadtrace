@@ -3,6 +3,7 @@
 #include "demo.h"
 #include "bounding_opt.h"
 #include "codegen.h"
+#include "Footmap.h"
 #include "material.h"
 #include "glm/glm.hpp"
 #include <cmath>
@@ -19,7 +20,8 @@ MyExpr* toyBrickXthin(int mat) { return offset(0.1f, move({ 0.f, 0.5f, 0.f }, bo
 
 MyExpr* toyBrickYthick(int mat) { return offset(0.1f, move({ 0.f, 3.f, 0.f }, box(0.9f, 2.9f, 0.9f, MyFields{ mat }))); }
 
-MyExpr* toyBrickXthick(int mat) { return offset(0.1f, move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat }))); }
+//MyExpr* toyBrickXthick(int mat) { return offset(0.1f, move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat }))); }
+MyExpr* toyBrickXthick(int mat) { return move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat })); }
 
 MyExpr* toyCylinder(int mat) { return offset(0.1f, move({ 0.f, 3.f, 0.f }, cylinder(Dir1D::Y, 0.9f, 2.9f, MyFields{ mat }))); }
 
@@ -65,6 +67,8 @@ MyExpr* demo_expr() {
             move(vec3(1, 0, 6), rotate(M13, toyCube(2))));
 }
 
+MyExpr* demo2(){return toyArch(1);}
+
 const string hlsl_prefix =
 R"(#ifndef SDF_HLSL
 #define SDF_HLSL
@@ -81,3 +85,9 @@ void build_kernel(const string &file_name, MyExpr* expr) {
     std::ofstream kernel(file_name);
     kernel << glsl_prefix << sdf(*expr) << /*"\n" << material(*expr) <<*/ glsl_postfix;
 }
+
+void build_footmap(const string &file_name, MyExpr* expr) {
+    std::ofstream kernel(file_name);
+    kernel << glsl_prefix << footmap(*expr) << glsl_postfix;
+}
+

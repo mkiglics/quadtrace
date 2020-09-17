@@ -161,6 +161,7 @@
     <ClInclude Include="CodeGen\codegen.h" />
     <ClInclude Include="CodeGen\demo.h" />
     <ClInclude Include="CodeGen\expr.h" />
+    <ClInclude Include="CodeGen\Footmap.h" />
     <ClInclude Include="CodeGen\material.h" />
     <ClInclude Include="CodeGen\ui.h" />
     <ClInclude Include="CodeGen\util.h" />
