@@ -6,11 +6,12 @@ int main(int argc, char* args[])
 	QuadricRender renderer;
 	renderer.Init(32);
 	
+	renderer.Render();
 
-	renderer.RunSpeedTest("Benchmark/speed_base_data.txt", false, 500, 50, {}, 5);
-	renderer.RunSpeedTest("Benchmark/speed_quadric_0.txt", true, 500, 50, {}, 5);
-	renderer.RunSpeedTest("Benchmark/speed_quadric_1.txt", true, 500, 50, {0.5f, 50, 0.01}, 5);	
-	return 0;
+	/*renderer.RunSpeedTest("Benchmark/speed_base_data.txt", false, 1000, 100, {}, 5);
+	renderer.RunSpeedTest("Benchmark/speed_quadric_0.txt", true, 1000, 100, {}, 5);
+	renderer.RunSpeedTest("Benchmark/speed_quadric_1.txt", true, 1000, 100, {0.5f, 50, 0.01}, 5);	
+	return 0;*/
 	renderer.RunErrorTest("Benchmark/error_base_data.csv", false, 1, 1024, {}, 4);
 	for (int i = 2; i < 1024; i *= 2)
 	{

@@ -35,6 +35,7 @@ vec3 getNormal(vec3 p, vec3 dim)
 
 vec3 gradient(in ivec3 coords)
 {
+	return texelFetch(eccentricity, coords, 0).yzw;
 	float[8] vert;
 	float[6] c;
 	for (int x = 0; x < 2; ++x)
@@ -125,7 +126,7 @@ TraceResult quadric_trace(in Ray ray, in SphereTraceDesc params)
 vec3 lighting(in vec3 p)
 {
 	vec3 ambient = vec3(0.1, 0.1, 0.1);
-	return ambient;
+	//return ambient;
 	vec3 n = getNormal(p,N);
 	vec3 toLight = -normalize(p - lightPos);
 	vec3 diffuse = vec3(0.6, 0.6, 0.6) * clamp(dot(n, toLight), 0, 1);

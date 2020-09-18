@@ -5,7 +5,7 @@ float SDF( in vec3 p )
     vec3 res = vec3( d, 1.0, 0.0);
 
    float s = 1.0;
-   for( int m=0; m<1; m++ )
+   for( int m=0; m<3; m++ )
    {
       vec3 a = mod( p*s, 2.0 )-1.0;
       s *= 3.0;

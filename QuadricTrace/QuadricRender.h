@@ -37,19 +37,14 @@ private:
 	bool SaveTexture(const char*);
 
 	bool hasError = false;
-<<<<<<< HEAD
 	std::string errorMsg = "";
-
-=======
-	std::string errosMsg = "";
->>>>>>> 0d1eae062da656f5f2a24c900f78bf4039059cc3
 	glm::ivec3 grid;
 	std::vector<char> text;
 	int useQuadricTrace = 1;
 	QuadricParam quadricArgs;
 
 	df::Texture3D<float> sdfTexture;
-	df::Texture3D<float> eccentricityTexture;
+	df::Texture3D<glm::vec4> eccentricityTexture;
 	df::Texture2D<glm::vec4> frameTexture;
 
 	df::Renderbuffer<df::depth24>* frameBuff;

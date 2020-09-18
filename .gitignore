@@ -391,3 +391,6 @@ MigrationBackup/
 
 # Benchmark and test results
 */Benchmark/*
+
+# Temporary sdf file
+*/Shaders/sdf

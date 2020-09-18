@@ -108,7 +108,7 @@ void main()
 		}
 	}
 
-	imageStore(ecc, coords, vec4(k));
+	imageStore(ecc, coords, vec4(k, norm));
 }
 
 
