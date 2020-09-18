@@ -10,6 +10,10 @@ QuadricRender::~QuadricRender()
 void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
+	
+	csg_tree = demo_expr();
+	build_kernel("Shaders/sdf", csg_tree); // generates the function
+	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
 	if (!LoadSDF("Shaders/sdf"))
 	{
@@ -26,9 +30,12 @@ void QuadricRender::Init(int gridSize = 16)
 
 	w = df::Backbuffer.getWidth(), h = df::Backbuffer.getHeight();
 
+<<<<<<< HEAD
 	frameBuff = new df::Renderbuffer<df::depth24>(w, h);
 	//frameBuff = new (df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1));
 
+=======
+>>>>>>> 0d1eae062da656f5f2a24c900f78bf4039059cc3
 	sdfTexture = df::Texture3D<float>(grid.x, grid.y, grid.z);
 	eccentricityTexture = df::Texture3D<float>(grid.x - 1, grid.y - 1, grid.z - 1);
 	frameTexture = df::Texture2D<glm::vec4>(w, h);
@@ -39,11 +46,14 @@ void QuadricRender::Init(int gridSize = 16)
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
 	*eccComputeProgram << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
 
+<<<<<<< HEAD
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
 	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
 
 	sam.AddResize([&](int w, int h) {*frameBuff = frameBuff->MakeResized(w, h); });
 
+=======
+>>>>>>> 0d1eae062da656f5f2a24c900f78bf4039059cc3
 	GL_CHECK; //extra opengl error checking in GPU Debug build configuration
 
 	Preprocess();
@@ -186,6 +196,7 @@ void QuadricRender::SetView(glm::vec3 eye, glm::vec3 at, glm::vec3 up)
 bool QuadricRender::Link()
 {
 	hasError = false;
+	build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
 	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
@@ -249,6 +260,10 @@ void QuadricRender::RenderUI()
 #endif
 	if (hasError)
 		ImGui::TextColored({ 255, 0, 0, 255 }, errorMsg.c_str());
+	ImGui::End();
+
+	ImGui::Begin("CSG Editor");
+	RenderCSG_UI(*csg_tree);
 	ImGui::End();
 }
 

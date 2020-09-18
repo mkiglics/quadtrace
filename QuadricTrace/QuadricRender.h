@@ -5,6 +5,8 @@
 #include <Dragonfly/detail/vao.h> //will be replaced
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
+#include "CodeGen/demo.h"
+#include "CodeGen/ui.h"
 
 #define DEBUG
 
@@ -35,8 +37,12 @@ private:
 	bool SaveTexture(const char*);
 
 	bool hasError = false;
+<<<<<<< HEAD
 	std::string errorMsg = "";
 
+=======
+	std::string errosMsg = "";
+>>>>>>> 0d1eae062da656f5f2a24c900f78bf4039059cc3
 	glm::ivec3 grid;
 	std::vector<char> text;
 	int useQuadricTrace = 1;
@@ -67,4 +73,7 @@ private:
 		{"Menger Spone", "Shaders/Examples/menger.glsl"},
 		{"Spheres", "Shaders/Examples/spheres.glsl"}
 	};
+
+	//codegen
+	MyExpr *csg_tree;
 };

@@ -11,10 +11,19 @@
     <Filter Include="Shaders\Examples">
       <UniqueIdentifier>{520fdbdf-c316-4c5f-8007-5769630f9359}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CodeGen">
+      <UniqueIdentifier>{6046498a-9470-4b36-9f7a-f6adc8027958}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="QuadricRender.cpp" />
+    <ClCompile Include="CodeGen\demo.cpp">
+      <Filter>CodeGen</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeGen\util.cpp">
+      <Filter>CodeGen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\vert.vert">
@@ -65,5 +74,32 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />
+    <ClInclude Include="CodeGen\bounding_opt.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\CNF.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\codegen.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\demo.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\expr.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\material.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\ui.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\util.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGen\Footmap.h">
+      <Filter>CodeGen</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
