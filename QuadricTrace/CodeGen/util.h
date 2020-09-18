@@ -16,3 +16,13 @@ glm::mat3 rotateZ(float angle);
 
 float length(float x, float y);
 float length(float x, float y, float z);
+
+struct CodeCarrier
+{
+    	std::string code, reg, reg_type;
+};
+
+inline CodeCarrier& operator +=(CodeCarrier& carr_, const std::string &statement_) {
+	carr_.code += "\t" + statement_ + "\n";
+	return carr_;
+}

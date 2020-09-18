@@ -7,6 +7,7 @@ struct MyFields { int material; };
 using MyExpr = Expr<MyFields>;
 
 MyExpr* demo_expr();
+MyExpr* demo2();
 
 MyExpr* toyCube(int mat);
 MyExpr* toyBrickYthin(int mat);
@@ -19,3 +20,4 @@ MyExpr* toyArch(int mat);
 MyExpr* toyRoof(int mat);
 
 void build_kernel(const std::string &file_name, MyExpr* expr);
+void build_footmap(const std::string &file_name, MyExpr* expr);

@@ -11,7 +11,7 @@
                 "variable": "PATH"
             }
         ],
-        "executable": "C:\\Users\\Kiglics\\Documents\\szakdolgozat\\The-Dragon-Flies\\x64\\Debug\\Demo.exe",
+        "executable": "C:\\Users\\Kiglics\\Documents\\TDk\\The-Dragon-Flies\\x64\\Debug\\QuadricTrace.exe",
         "inject": false,
         "numQueuedFrames": 4,
         "options": {
@@ -28,6 +28,6 @@
             "verifyBufferAccess": false
         },
         "queuedFrameCap": 0,
-        "workingDir": "C:/Users/Kiglics/Documents/szakdolgozat/The-Dragon-Flies/Demo"
+        "workingDir": "C:/Users/Kiglics/Documents/TDK/The-Dragon-Flies/QuadricTrace"
     }
 }

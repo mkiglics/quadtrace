@@ -5,10 +5,12 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 restrict writeonly uniform image3D ecc;
 uniform sampler3D sdf_values;
 
+uniform int N = 70;
+uniform int M = 70;
+uniform float correction = 0.01;
+
 #define EPSILON 0.01
 #define PI 3.14159265359
-#define N 70
-#define M 70
 
 TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 {
@@ -102,11 +104,11 @@ void main()
 			float cosPhi = dot(d, norm);
 			float sinPhi = length(cross(d, norm));
 			vec2 pos2d = vec2(sinPhi, cosPhi) * scale;
-			k = min(k, mix(getK(pos2d), -1.0, 0.01));
+			k = min(k, mix(getK(pos2d), -1.0, correction));
 		}
 	}
 
-	imageStore(ecc, coords, vec4(k));
+	imageStore(ecc, coords, vec4(k, norm));
 }
 
 

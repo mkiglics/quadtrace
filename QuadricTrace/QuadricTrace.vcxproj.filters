@@ -74,6 +74,15 @@
     <None Include="Shaders\tracing.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\frame.comp">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Examples\menger.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
+    <None Include="Shaders\Examples\spheres.glsl">
+      <Filter>Shaders\Examples</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />

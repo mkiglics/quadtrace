@@ -145,10 +145,13 @@
   <ItemGroup>
     <None Include="Shaders\Examples\blocks.glsl" />
     <None Include="Shaders\Examples\default.glsl" />
+    <None Include="Shaders\Examples\menger.glsl" />
     <None Include="Shaders\Examples\ring.glsl" />
     <None Include="Shaders\Examples\spherebox.glsl" />
+    <None Include="Shaders\Examples\spheres.glsl" />
     <None Include="Shaders\Examples\tower.glsl" />
     <None Include="Shaders\fragment.frag" />
+    <None Include="Shaders\frame.comp" />
     <None Include="Shaders\quadric.glsl" />
     <None Include="Shaders\sdf_common.glsl" />
     <None Include="Shaders\tracing.glsl" />
@@ -170,6 +173,7 @@
     <ClInclude Include="CodeGen\codegen.h" />
     <ClInclude Include="CodeGen\demo.h" />
     <ClInclude Include="CodeGen\expr.h" />
+    <ClInclude Include="CodeGen\Footmap.h" />
     <ClInclude Include="CodeGen\material.h" />
     <ClInclude Include="CodeGen\Objects\models.h" />
     <ClInclude Include="CodeGen\ui.h" />
