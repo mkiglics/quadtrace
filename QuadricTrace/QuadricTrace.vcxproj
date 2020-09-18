@@ -129,6 +129,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CodeGen\demo.cpp" />
+    <ClCompile Include="CodeGen\Objects\model1.cpp" />
+    <ClCompile Include="CodeGen\Objects\model2.cpp" />
+    <ClCompile Include="CodeGen\Objects\model3.cpp" />
+    <ClCompile Include="CodeGen\Objects\model4.cpp" />
+    <ClCompile Include="CodeGen\Objects\model5.cpp" />
+    <ClCompile Include="CodeGen\Objects\model7.cpp" />
+    <ClCompile Include="CodeGen\Objects\model8.cpp" />
+    <ClCompile Include="CodeGen\Objects\model9.cpp" />
+    <ClCompile Include="CodeGen\Objects\ObjectsUtil.cpp" />
     <ClCompile Include="CodeGen\util.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="QuadricRender.cpp" />
@@ -162,6 +171,7 @@
     <ClInclude Include="CodeGen\demo.h" />
     <ClInclude Include="CodeGen\expr.h" />
     <ClInclude Include="CodeGen\material.h" />
+    <ClInclude Include="CodeGen\Objects\models.h" />
     <ClInclude Include="CodeGen\ui.h" />
     <ClInclude Include="CodeGen\util.h" />
     <ClInclude Include="QuadricRender.h" />

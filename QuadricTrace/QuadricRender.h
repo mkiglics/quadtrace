@@ -5,8 +5,8 @@
 #include <Dragonfly/detail/vao.h> //will be replaced
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
-#include "CodeGen/demo.h"
 #include "CodeGen/ui.h"
+#include "CodeGen/Objects/models.h"
 
 #define DEBUG
 

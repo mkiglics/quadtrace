@@ -14,6 +14,9 @@
     <Filter Include="CodeGen">
       <UniqueIdentifier>{6046498a-9470-4b36-9f7a-f6adc8027958}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CodeGen\Objects">
+      <UniqueIdentifier>{20f2832a-7611-4343-af8d-7b2b2d64a0f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -24,6 +27,15 @@
     <ClCompile Include="CodeGen\util.cpp">
       <Filter>CodeGen</Filter>
     </ClCompile>
+    <ClCompile Include="CodeGen\Objects\model1.cpp" />
+    <ClCompile Include="CodeGen\Objects\model2.cpp" />
+    <ClCompile Include="CodeGen\Objects\ObjectsUtil.cpp" />
+    <ClCompile Include="CodeGen\Objects\model3.cpp" />
+    <ClCompile Include="CodeGen\Objects\model4.cpp" />
+    <ClCompile Include="CodeGen\Objects\model5.cpp" />
+    <ClCompile Include="CodeGen\Objects\model7.cpp" />
+    <ClCompile Include="CodeGen\Objects\model8.cpp" />
+    <ClCompile Include="CodeGen\Objects\model9.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\vert.vert">
@@ -89,5 +101,6 @@
     <ClInclude Include="CodeGen\util.h">
       <Filter>CodeGen</Filter>
     </ClInclude>
+    <ClInclude Include="CodeGen\Objects\models.h" />
   </ItemGroup>
 </Project>

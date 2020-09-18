@@ -11,7 +11,7 @@ void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
 	
-	csg_tree = demo_expr();
+	csg_tree = model9_expr();
 	build_kernel("Shaders/sdf", csg_tree); // generates the function
 
 	if (!LoadSDF("Shaders/sdf"))
@@ -56,8 +56,12 @@ void QuadricRender::Preprocess()
 
 void QuadricRender::Render()
 {
+	int count = 0;
+	double sum = 0.0;
+
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
+			auto start = std::chrono::high_resolution_clock::now();
 
 			cam.Update();
 
@@ -66,11 +70,19 @@ void QuadricRender::Render()
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
 				<< "render_quadric" << useQuadricTrace;
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
+			auto end = std::chrono::high_resolution_clock::now();
+
+			sum += (end - start).count();
+			if (++count == 100) {
+				std::cout << (sum / (double) count) << std::endl;
+				count = 0;
+				sum = 0;
+			}
 
 			GL_CHECK;
 #ifdef DEBUG
-			program->Render(); //only the UI!!
-			eccComputeProgram->Render(); sdfComputeProgram->Render();
+			// program->Render(); //only the UI!!
+			// eccComputeProgram->Render(); sdfComputeProgram->Render();
 #endif
 			RenderUI();
 		}

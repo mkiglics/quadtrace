@@ -22,7 +22,7 @@ TraceResult sphere_trace(Ray ray, SphereTraceDesc params, ivec3 dim)
 		++i;
 	} while (
 		ret.T < ray.Tmax &&       		// Stay within bound box
-		d	  > params.epsilon&&		// Stop if cone is close to surface
+		d	  > params.epsilon &&		// Stop if cone is close to surface
 		i < params.maxiters	        	// Stop if too many iterations
 		);
 
