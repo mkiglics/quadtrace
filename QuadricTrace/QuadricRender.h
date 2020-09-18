@@ -6,7 +6,7 @@
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
 #include "CodeGen/ui.h"
-#include "CodeGen/Objects/models.h"
+#include "CodeGen/demo.h"
 
 #define DEBUG
 
