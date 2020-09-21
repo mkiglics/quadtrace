@@ -89,7 +89,7 @@ float Substract(float d1, float d2){return max(d1,-d2);}
 vec4 fm_sphere(vec3 p, float r)
 {
     float d = length(p);
-    return vec4(p*(1.-r/d), d - r);
+    return vec4(p*(r/d-1.), d - r);
 }
 
 vec4 fm_planeZ(vec3 p) {return vec4(0, 0, -p.z, p.z);}
@@ -99,14 +99,17 @@ vec4 fm_planeX(vec3 p) {return fm_planeZ(p.zyx).zyxw;}
 vec4 fm_box(vec3 p, vec3 b )
 {
 	vec3 d = abs(p) - b;
-    return vec4(max(d,0.)*sign(p), length(max(d,0.))+min(max(d.x,max(d.y,d.z)),0.));
+    float m = max(d.x,max(d.y,d.z));
+    vec3 dm = m<0. ? vec3(equal(d,vec3(m)))*d : max(d,0.);
+    return vec4(-dm* (vec3(lessThan(vec3(0),p))*2.-1.), (m<0?-1.:1.)*length(dm));
 }
 
+    //return vec4(-dm * (vec3(lessThan(vec3(0),p))*2.-1.) , (m<0?-1.:1.)*length(dm));
 
 vec4 fm_cylinderZ(vec3 p, float r)
 {
     float d = length(p.xy);
-    return vec4(p.xy*(1.-r/d),0.,d-r);
+    return vec4(p.xy*(r/d-1.),0.,d-r);
 }
 vec4 fm_cylinderY(vec3 p, float r) {return fm_cylinderZ(p.xzy, r).xzyw;}
 vec4 fm_cylinderX(vec3 p, float r) {return fm_cylinderZ(p.zyx, r).zyxw;}
@@ -114,9 +117,13 @@ vec4 fm_cylinderX(vec3 p, float r) {return fm_cylinderZ(p.zyx, r).zyxw;}
 vec4 fm_cylinderZ(vec3 p, vec2 rh)
 {
     float len = length(p.xy);
-	vec2 d = vec2(len,abs(p.z)) - rh;
-    vec2 dm = max(d,0.);
-	return vec4(dm.x*p.xy/len, p.z<0.?-dm.y:dm.y, min(max(d.x,d.y),0.0) + length(dm));
+    vec2 d = vec2(len,abs(p.z)) - rh;
+    float m = max(d.x,d.y);
+    vec2 dm = m<0. ? vec2(equal(d,vec2(m)))*d : max(d,0.);
+    return vec4(-dm.x*p.xy/len,  p.z<0.?dm.y:-dm.y, (m<0?-1.:1.)*length(dm));
+
+    //vec2 dm = max(d,0.);
+	//return vec4(-dm.x*p.xy/len, p.z<0.?dm.y:-dm.y, min(max(d.x,d.y),0.0) + length(dm));
 }
 vec4 fm_cylinderY(vec3 p, vec2 rh) {return fm_cylinderZ(p.xzy, rh).xzyw;}
 vec4 fm_cylinderX(vec3 p, vec2 rh) {return fm_cylinderZ(p.zyx, rh).zyxw;}

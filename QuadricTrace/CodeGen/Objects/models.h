@@ -24,3 +24,4 @@ MyExpr* model8_expr(int N = 2, int M = 2, int connectTubeCount = 3, Model2Attrib
 MyExpr* model9_expr(float r = 1.0f, float height = 0.3f, int holeCount = 4, int N = 3, int M = 3);
 
 void build_kernel(const std::string& file_name, MyExpr* expr);
+void build_footmap(const std::string &file_name, MyExpr* expr);

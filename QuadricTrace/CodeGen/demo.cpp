@@ -12,26 +12,28 @@
 using namespace std;
 using namespace glm;
 
-MyExpr* toyCube(int mat) { return offset(0.1f, move({ 0.f, 1.f, 0.f }, box(0.9f, 0.9f, 0.9f, MyFields{ mat }))); }
+const float g_offset = 0.25f;
+MyExpr* toyCube(int mat) { return offset(g_offset, move({ 0.f, 1.f, 0.f }, box(0.9f, 0.9f, 0.9f, MyFields{ mat }))); }
 
-MyExpr* toyBrickYthin(int mat) { return offset(0.1f, move({ 0.f, 3.f, 0.f }, box(0.4f, 2.9f, 0.9f, MyFields{ mat }))); }
+MyExpr* toyBrickYthin(int mat) { return offset(g_offset, move({ 0.f, 3.f, 0.f }, box(0.4f, 2.9f, 0.9f, MyFields{ mat }))); }
 
-MyExpr* toyBrickXthin(int mat) { return offset(0.1f, move({ 0.f, 0.5f, 0.f }, box(2.9f, 0.4f, 0.9f, MyFields{ mat }))); }
+MyExpr* toyBrickXthin(int mat) { return offset(g_offset, move({ 0.f, 0.5f, 0.f }, box(2.9f, 0.4f, 0.9f, MyFields{ mat }))); }
 
-MyExpr* toyBrickYthick(int mat) { return offset(0.1f, move({ 0.f, 3.f, 0.f }, box(0.9f, 2.9f, 0.9f, MyFields{ mat }))); }
+MyExpr* toyBrickYthick(int mat) { return offset(g_offset, move({ 0.f, 3.f, 0.f }, box(0.9f, 2.9f, 0.9f, MyFields{ mat }))); }
 
-//MyExpr* toyBrickXthick(int mat) { return offset(0.1f, move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat }))); }
-MyExpr* toyBrickXthick(int mat) { return move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat })); }
+MyExpr* toyBrickXthick(int mat) { return offset(g_offset, move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat }))); }
+//MyExpr* toyBrickXthick(int mat) { return move({ 0.f, 1.f, 0.f }, box(2.9f, 0.9f, 0.9f, MyFields{ mat })); }
 
-MyExpr* toyCylinder(int mat) { return offset(0.1f, move({ 0.f, 3.f, 0.f }, cylinder(Dir1D::Y, 0.9f, 2.9f, MyFields{ mat }))); }
+MyExpr* toyCylinder(int mat) { return offset(g_offset, move({ 0.f, 3.f, 0.f }, cylinder(Dir1D::Y, 0.9f, 2.9f, MyFields{ mat }))); }
 
-MyExpr* toyCylinderSmall(int mat) { return offset(0.1f, move({ 0.f, 1.f, 0.f }, cylinder(Dir1D::Y, 0.9f, 0.9f, MyFields{ mat }))); }
+MyExpr* toyCylinderSmall(int mat) { return offset(g_offset, move({ 0.f, 1.f, 0.f }, cylinder(Dir1D::Y, 0.9f, 0.9f, MyFields{ mat }))); }
 
-MyExpr* toyArch(int mat) { return subtract<MyFields>(toyBrickXthick(mat), move({ 0.f, -1.4f, 0.f }, cylinder(Dir1D::Z, 2.6f, MyFields{ mat }))); }
+MyExpr* toyArch(int mat) { return offset(g_offset, subtract<MyFields>(toyBrickXthick(mat), move({ 0.f, -1.4f, 0.f }, cylinder(Dir1D::Z, 2.6f, MyFields{ mat })))); }
 
 MyExpr* toyRoof(int mat) {
-    return intersect<MyFields>(toyBrickXthick(mat),
-        offset(0.1f, move({ 0.f, -1.5f, 0.f }, cylinder(Dir1D::Z, 3.3f, 0.9f, MyFields{ mat }))));
+    return offset(g_offset,
+        intersect<MyFields>(toyBrickXthick(mat),
+        move({ 0.f, -1.5f, 0.f }, cylinder(Dir1D::Z, 3.3f, 0.9f, MyFields{ mat }))));
 }
 
 mat3 fitToyY(vec2 a, vec2 b) {

@@ -3,7 +3,7 @@
 QuadricRender::~QuadricRender()
 {
 	delete program;
-	delete eccComputeProgram;
+	delete eccComputeProgram;	
 	delete sdfComputeProgram;
 }
 
@@ -11,8 +11,12 @@ void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
 
-	csg_tree = demo_expr();
-	build_kernel("Shaders/sdf", csg_tree); // generates the function
+	//csg_tree = model3_expr(1.f,0.3f,1);
+	//csg_tree = rotate(rotateY(0.4f),toyRoof(0));
+	csg_tree = offset(0.2f,subtract<Fields>(move({0.f,0.f,0.f},sphere<Fields>(6.f)),cylinder<Fields>(Dir1D::Z,5.8f,Fields())));
+	//csg_tree = offset(0.5f,intersect<MyFields>(box<MyFields>(3.5f,3.5f,3.5f),sphere<MyFields>(5.f)));
+	
+	build_footmap("Shaders/sdf", csg_tree); // generates the function
 	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
 	if (!LoadSDF("Shaders/sdf"))
@@ -20,12 +24,12 @@ void QuadricRender::Init(int gridSize = 16)
 		LoadSDF(examples[0].second.c_str()); SaveSDF();
 	}
 
-	cam.SetView(glm::vec3(15.1, 15, 15), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	cam.SetView(glm::vec3(4.5, 10, 10), glm::vec3(2.5, 0, 0), glm::vec3(0, 1, 0));
 	cam.SetSpeed(15);
 	sam.AddHandlerClass(cam, 5);
 	sam.AddHandlerClass<df::ImGuiHandler>(10);
 
-	program = new df::ShaderProgramEditorVF("Shader Editor");
+	program = new df::ShaderProgramVF("Shader Editor");
 	*program << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 
 	w = df::Backbuffer.getWidth(), h = df::Backbuffer.getHeight();
@@ -201,7 +205,7 @@ bool QuadricRender::Link()
 		errorMsg = sdfComputeProgram->GetErrors();
 	}
 	delete program;
-	program = new df::ShaderProgramEditorVF("Shader Editor");
+	program = new df::ShaderProgramVF("Shader Editor");
 	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
@@ -251,15 +255,16 @@ void QuadricRender::RenderUI()
 	}
 	ImGui::NewLine();
 #ifdef DEBUG
-	if (ImGui::Button(useQuadricTrace ? "Render using quadric tracing" : "Render using sphere tracing")) useQuadricTrace = !useQuadricTrace;
+	ImGui::Text((useQuadricTrace? "Currently rendering with quadric tracing": "Currently rendering with sphere tracing"));
+	if (ImGui::Button(useQuadricTrace ? "Render using sphere tracing" : "Render using quadric tracing")) useQuadricTrace = !useQuadricTrace;
 #endif
 	if (hasError)
 		ImGui::TextColored({ 255, 0, 0, 255 }, errorMsg.c_str());
 	ImGui::End();
 
-	ImGui::Begin("CSG Editor");
-	RenderCSG_UI(*csg_tree);
-	ImGui::End();
+	//ImGui::Begin("CSG Editor");
+	//RenderCSG_UI(*csg_tree);
+	//ImGui::End();
 }
 
 bool QuadricRender::LoadSDF(const char* name)

@@ -6,7 +6,8 @@
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
 #include "CodeGen/ui.h"
-#include "CodeGen/demo.h"
+//#include "CodeGen/demo.h"
+#include "CodeGen/Objects/models.h"
 
 #define DEBUG
 
@@ -40,7 +41,7 @@ private:
 	std::string errorMsg = "";
 	glm::ivec3 grid;
 	std::vector<char> text;
-	int useQuadricTrace = 1;
+	int useQuadricTrace = 0;
 	QuadricParam quadricArgs;
 
 	df::Texture3D<float> sdfTexture;
@@ -49,7 +50,7 @@ private:
 
 	df::Renderbuffer<df::depth24>* frameBuff;
 
-	df::ShaderProgramEditorVF* program;
+	df::ShaderProgramVF* program;
 	df::ComputeProgramEditor* frameCompProgram;
 	df::ComputeProgramEditor* sdfComputeProgram;
 	df::ComputeProgramEditor* eccComputeProgram;

@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 #include "../bounding_opt.h"
 #include "../codegen.h"
+#include "../Footmap.h"
 #include "glm/glm.hpp"
 #include <cmath>
 #include <fstream>
@@ -22,4 +23,8 @@ const std::string glsl_postfix = "\n// End of generated GLSL code\n";
 void build_kernel(const std::string& file_name, MyExpr* expr) {
     std::ofstream kernel(file_name);
     kernel << glsl_prefix << sdf(*expr) << /*"\n" << material(*expr) <<*/ glsl_postfix;
+}
+void build_footmap(const std::string &file_name, MyExpr* expr) {
+    std::ofstream kernel(file_name);
+    kernel << glsl_prefix << footmap(*expr) << glsl_postfix;
 }

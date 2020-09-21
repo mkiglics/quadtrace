@@ -20,9 +20,11 @@ float length(float x, float y, float z);
 struct CodeCarrier
 {
     	std::string code, reg, reg_type;
+		int indent = 1;
 };
 
 inline CodeCarrier& operator +=(CodeCarrier& carr_, const std::string &statement_) {
-	carr_.code += "\t" + statement_ + "\n";
+	carr_.code.append(carr_.indent, '\t');
+	carr_.code += statement_ + "\n";
 	return carr_;
 }

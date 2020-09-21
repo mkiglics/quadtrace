@@ -8,6 +8,7 @@
 
 #include "Dragonfly/config.h"
 
+const int iterations = 5;
 
 template<typename Fields>
 struct Footmap {
@@ -23,19 +24,19 @@ struct Footmap {
     } state;
 	
     Carrier operator()(Box<Fields> expr) {
-        return Var("vec4", "fm_box(" + move_rotate() + ", " + float3(expr.x, expr.y, expr.z) + ")");
+        return Var("vec4", result_rotate() + "fm_box(" + move_rotate() + ", " + float3(expr.x, expr.y, expr.z) + ")");
     }
     
     Carrier operator()(Sphere<Fields> expr) {
-        return Var("vec4", "fm_sphere(" + move_rotate() + ", " + float1(expr.r) + ")");
+        return Var("vec4", result_rotate() + "fm_sphere(" + move_rotate() + ", " + float1(expr.r) + ")");
     }
     Carrier operator()(Cylinder<Fields> expr) {
         using namespace std::string_literals;
-        return Var("vec4", "fm_cylinder"s + (char)expr.dir + "(" + move_rotate() + ", " +
+        return Var("vec4", result_rotate() + "fm_cylinder"s + (char)expr.dir + "(" + move_rotate() + ", " +
             (expr.y == std::numeric_limits<float>::infinity() ? float1(expr.x) : float2(expr.x, expr.y)) + ")");
     }
     Carrier operator()(PlaneXZ<Fields> expr) {
-        return Var("vec4", "fm_planeY(" + move_rotate() + ")");
+        return Var("vec4", result_rotate() + "fm_planeY(" + move_rotate() + ")");
     }
 
 	Carrier operator()(Invert<Fields> expr) {
@@ -49,7 +50,7 @@ struct Footmap {
     	sub += sub.reg + " -= " + float1(expr.r) +" * vec4(normalize(" + sub.reg + ".xyz),1); //offset";
         return sub;
     }
-    Carrier operator()(Intersect<Fields> expr)
+	Carrier operator()(Intersect<Fields> expr)
 	{
     	ASSERT(expr.a.size()==2, "Too many argumets at Intersect CSG OP."); //todo more
     	int prev_regnumber = state.next_reg;
@@ -62,21 +63,18 @@ struct Footmap {
         Carrier carr = Var("vec4", "vec4(0)"); // New variable initialized code carrier (variable is its register)
     	const std::string &reg = carr.reg;
     	
-    	std::string fp  = Var("vec4", f + "(p)", carr); // New variable into existing code
-    	std::string gp  = Var("vec4", g + "(p)", carr);
-    	std::string gfp = Var("vec4", g + "(p + " + fp + ".xyz)", carr);
-    	std::string fgp = Var("vec4", f + "(p + " + gp + ".xyz)", carr);
-    	std::string mxp = Var("vec4", fp  + ".w > " + gp + ".w ? " + fp + " : " + gp, carr);
-    	
-        carr += reg + ".xyz = " + mxp + ".w<=0. ? "  + mxp + ".xyz : " + reg + ".xyz;"; // Carrier += string operator
-        carr += reg + ".xyz = " + mxp + ".w>0.0 && " + gfp + ".w<0.001 ? " + fp + ".xyz" + " : " + reg + ".xyz;";
-        carr += reg + ".xyz = " + mxp + ".w>0.0 && " + fgp + ".w<0.001 ? " + gp + ".xyz" + " : " + reg + ".xyz;";
-    	
-    	std::string vec = Var("vec3", "0.5 * ("+fp + ".xyz + " + gp + ".xyz + " + fgp + ".xyz + " + gfp + ".xyz)", carr);
-    	
-    	carr += reg + ".xyz = " + mxp + ".w>0.0 && " + fgp + ".w>=0.001 && " + gfp + ".w>=0.001 ? "
-    							+ vec + " : " + reg + ".xyz;";
-    	carr += reg + ".w = (" + mxp + ".w<0.?-1.:1.) * length(" + reg + ".xyz);";
+    	std::string fp  = Var("vec4", f+"(p)", carr); // New variable into existing code
+    	std::string gp  = Var("vec4", g+"(p)", carr);
+        std::string gfp = Var("vec4", g+"(p + " + fp+".xyz)", carr);
+    	std::string fgp = Var("vec4", f+"(p + " + gp+".xyz)", carr);
+    	carr += reg + " = " + fp+".w>"+gp+".w ? " + fp + " : " + gp + ";";
+    	carr += "if(" + reg+".w>0. && " + gfp+".w>0.00001 && " + fgp+".w>0.00001){";
+    	{++carr.indent;
+    		carr += reg + ".xyz += " + fp+".w>" + gp+".w ? " + gfp+".xyz : " + fgp+".xyz;";
+    		for(int i=0; i<iterations; ++i)
+    			carr += reg+".xyz += 0.5*(" + f+"(p+"+reg+".xyz).xyz + " + g+"(p+"+reg+".xyz).xyz);";
+    	}--carr.indent; carr +="}";
+        carr += reg+".w = ("+reg+".w<0.?-1.:1.) * length("+reg+".xyz);";
 		return carr;
     }
 	Carrier operator()(Union<Fields> expr)
@@ -112,6 +110,11 @@ struct Footmap {
     		+  (m == glm::vec3(0)             ? "" : " - " + float3(m));
     }
 
+	std::string result_rotate()
+    {
+	    return "mat4(" + float3x3(glm::inverse(state.rotate)) +")*";
+    }
+
 	// Defines a new function based on the code within code carrier and returns the name of the function.
 	std::string Fun(const Carrier &carr, const std::string &arguments = "vec3 p")
     {
@@ -119,6 +122,7 @@ struct Footmap {
     	std::string name = "f" + std::to_string(state.next_fun++);
     	state.functions += + "\n" + carr.reg_type + " " + name + "(" + arguments + "){\n"
     						+ carr.code
+    						//+ "\t" + carr.reg + ".w = (" + carr.reg + ".w<0.?-1.:1.) * length(" + carr.reg + ".xyz);\n"
     						+"\treturn " + carr.reg
     					+ ";\n}\n";
 	    return name;

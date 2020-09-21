@@ -11,7 +11,7 @@ uniform sampler3D eccentricity;
 uniform sampler3D sdf_values;
 uniform ivec3 N;
 
-uniform int max_iter = 150;
+uniform int max_iter = 50;
 uniform bool render_quadric = true;
 uniform float delta = 0.8;
 
@@ -152,7 +152,7 @@ void main()
 		imageStore(frameData, coords, vec4(res.T / 100.0, 0, 0, 1));
 		return;
 	}
-	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1)); return;}
+	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0.1, 0.2, 0.3, 1)); return;}
 	if (bool(res.flags & 4))		{imageStore(frameData, coords, vec4(1, 0, 0, 1)); return;}
 	vec3 p = eye + r.V*res.T;
 
