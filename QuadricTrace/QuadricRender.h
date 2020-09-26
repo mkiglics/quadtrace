@@ -32,7 +32,7 @@ public:
 	void Render();
 
 	void SetView(glm::vec3, glm::vec3, glm::vec3);
-	void RunErrorTest(TestArg arg);
+	std::vector<float> RunErrorTest(TestArg arg);
 	double RunSpeedTest(TestArg arg);
 
 private:
@@ -41,7 +41,6 @@ private:
 	bool Link();
 	bool LoadSDF(const char*);
 	bool SaveSDF();
-	bool SaveTexture(const char*);
 
 	bool hasError = false;
 	std::string errorMsg = "";

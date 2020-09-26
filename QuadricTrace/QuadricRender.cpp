@@ -96,25 +96,25 @@ void QuadricRender::Render()
 	);
 }
 
-void QuadricRender::RunErrorTest(TestArg arg)
+std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 {
 	quadricArgs = arg.q_arg;
+	csg_tree = arg.model;
 	build_kernel("Shaders/sdf.tmp", csg_tree);
 	LoadSDF("Shaders/sdf.tmp"); Link();
-	csg_tree = arg.model;
-	long frame = 0;
 	
+	std::vector<float> data(w * h);
+	int fr = 0;
+
 	sam.Run([&](float deltaTime)
 		{
-			if (frame == arg.max_frames) sam.Quit();
-			++frame;
 			cam.Update();
 
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << (int)(arg.method == Quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
-				<< "trace_method" << (int) arg.method;
+				<< "render_quadric" << (int)(arg.method == SphereTrace::Quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
+				<< "trace_method" << (int) (arg.method);
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -122,12 +122,16 @@ void QuadricRender::RunErrorTest(TestArg arg)
 			df::Backbuffer << df::Clear() << *program << "frame" << frameTexture;
 
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
-			/*program->Render(); //only the UI!!
-			eccComputeProgram->Render(); sdfComputeProgram->Render();
-			frameCompProgram->Render();*/
+
+			if (fr == 3) {
+				glReadPixels(0, 0, w, h, GL_RED, GL_FLOAT, &data[0]);
+				sam.Quit();
+			}
+			++fr;
 		}
 	);
-	//SaveTexture(filename);
+
+	return data;
 }
 
 double QuadricRender::RunSpeedTest(TestArg arg)
@@ -167,7 +171,7 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
 		}
 	);
-	return (arg.max_frames - 10) / elapsed.count();
+	return elapsed.count() / (arg.max_frames - 10);
 }
 
 void QuadricRender::SetView(glm::vec3 eye, glm::vec3 at, glm::vec3 up)
@@ -277,29 +281,5 @@ bool QuadricRender::SaveSDF()
 	out << text.data();
 	out.close();
 	hasError = false;
-	return true;
-}
-
-bool QuadricRender::SaveTexture(const char* filename)
-{
-
-	std::ofstream out(filename);
-	if (!out.is_open())
-	{
-		std::cout << "Cannot open " << filename << std::endl;
-		return false;
-	}
-	std::vector<float> data(w * h);
-	glReadPixels(0, 0, w, h, GL_RED, GL_FLOAT, &data[0]);
-
-	for (int i = 0; i < h; ++i)
-	{
-		for (int j = 0; j < w; ++j)
-		{
-			out << data[i * w + j] << ',';
-		}
-		out << "\n";
-	}
-	out.close();
 	return true;
 }

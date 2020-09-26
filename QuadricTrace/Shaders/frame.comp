@@ -23,7 +23,7 @@ uniform vec3 eye, at, up;
 uniform vec2 windowSize;
 
 uniform bool error_test = false;
-uniform int  method = 0;
+uniform int  trace_method = 0;
 
 vec3 getNormal(vec3 p, vec3 dim) 
 {
@@ -164,7 +164,7 @@ TraceResult quadric_trace(in Ray ray, in SphereTraceDesc params)
 		rot = getRotation(dir);
 		//the parameter of the closest intersection point
 		t = intersectQuadric(rot*(p-round(p)), rot*ray.V, k);
-		d = max(t, texelFetch(sdf_values, globalToTexel(p, N), 0).r-0.8);
+		d = max(t, texelFetch(sdf_values, globalToTexel(p, N), 0).r-0.7);
 		if (d<delta) {						// use SDF if too close to surface
 			d = max(t, SDF(ray.P+ret.T*ray.V));
 		}
@@ -203,15 +203,15 @@ void main()
 	Ray r = Camera(coords.xy / windowSize, eye, at, windowSize);
 
 	TraceResult res = render_quadric?quadric_trace(r, SphereTraceDesc(0.001, max_iter)):(
-		method == 0 ? sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
-		(method == 1 ? relaxed_sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
+		trace_method == 0 ? sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
+		(trace_method == 1 ? relaxed_sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
 					  enhanced_sphere_trace(r, SphereTraceDesc(0.001, max_iter))));
 
 
 	if (error_test)
 	{
-		if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1)); return;}
-		imageStore(frameData, coords, vec4(res.T / 100.0, 0, 0, 1));
+		if (bool(res.flags & 1)) {imageStore(frameData, coords, vec4(0, 0, 0, 1)); return;}
+		imageStore(frameData, coords, vec4(res.T/r.Tmax, 0, 0, 1));
 		return;
 	}
 	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1)); return;}

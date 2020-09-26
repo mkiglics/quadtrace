@@ -16,7 +16,30 @@ MyExpr* models[] = {
 	model10_expr()
 };
 
-void runTests(const char* infilename, const char* outfilename, QuadricRender& renderer)
+glm::vec3 pos[] = {
+	{1.5,2.1,1.5},
+	{0.1,  2,0.3},
+	{  2,1.1,  2},
+	{1.5,2.1,1.5},
+	{1.5,2.1,1.5},
+	{1.5,2.1,1.5},
+	{1.5,2.1,1.5},
+	{-3.5,2.1,-3.5},
+	{1.5,2.1,1.5}
+};
+
+double EvalError(std::vector<float>& base, std::vector<float>& curr)
+{
+	double sum = 0;
+	for (unsigned i = 0; i < base.size(); ++i)
+	{
+		if (base[i] == 0 || abs(base[i] - curr[i]) < 0.001) continue;
+		sum += (base[i] - curr[i]) * (base[i] - curr[i]);
+	}
+	return sqrt(sum);
+}
+
+void runSpeedTests(const char* infilename, const char* outfilename, QuadricRender& renderer)
 {
 	std::ifstream in(infilename);
 	if (!in.is_open()) return;
@@ -66,6 +89,21 @@ void runTests(const char* infilename, const char* outfilename, QuadricRender& re
 	in.close();
 }
 
+void runErrorTests(QuadricRender& renderer)
+{
+	double res[9];
+	for (int i = 0; i < 6; ++i)
+	{
+		renderer.SetView(pos[i], { 0,0,0 }, { 0,1,0 });
+		std::vector<float> base = renderer.RunErrorTest({ models[i], 0, 1000, {}, QuadricRender::SphereTrace::Simple });
+		std::vector<float> res1 = renderer.RunErrorTest({ models[i], 0, 3, {1, 70, 0.01}, QuadricRender::SphereTrace::Enhanced});
+		std::vector<float> res2 = renderer.RunErrorTest({ models[i], 0, 3, {1, 70, 0.01}, QuadricRender::SphereTrace::Quadric });
+		res[i] = EvalError(base, res1) / EvalError(base, res2);
+	}
+	for (int i = 0; i < 9; ++i) std::cout << res[i] << ' ';
+	std::cin.get();
+}
+
 int main(int argc, char* args[])
 {
 
@@ -73,7 +111,8 @@ int main(int argc, char* args[])
 	renderer.Init(32);
 
 #ifdef TEST
-	runTests("test.txt", "out.txt", renderer);
+	//runSpeedTests("test.txt", "Benchmark/out.txt", renderer);
+	runErrorTests(renderer);
 #else
 	renderer.Render();
 #endif
