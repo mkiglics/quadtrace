@@ -390,7 +390,8 @@ MigrationBackup/
 .ionide/
 
 # Benchmark and test results
-*/Benchmark/*
+QuadricTrace/Benchmark/*
+out.txt
 
 # Temporary sdf file
-*/Shaders/sdf
+QuadricTrace/Shaders/sdf.tmp

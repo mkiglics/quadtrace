@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="CodeGen\demo.cpp" />
     <ClCompile Include="CodeGen\Objects\model1.cpp" />
+    <ClCompile Include="CodeGen\Objects\model10.cpp" />
     <ClCompile Include="CodeGen\Objects\model2.cpp" />
     <ClCompile Include="CodeGen\Objects\model3.cpp" />
     <ClCompile Include="CodeGen\Objects\model4.cpp" />
@@ -179,6 +180,9 @@
     <ClInclude Include="CodeGen\ui.h" />
     <ClInclude Include="CodeGen\util.h" />
     <ClInclude Include="QuadricRender.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

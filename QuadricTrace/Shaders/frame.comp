@@ -23,6 +23,7 @@ uniform vec3 eye, at, up;
 uniform vec2 windowSize;
 
 uniform bool error_test = false;
+uniform int  method = 0;
 
 vec3 getNormal(vec3 p, vec3 dim) 
 {
@@ -81,6 +82,64 @@ TraceResult sphere_trace(in Ray ray, in SphereTraceDesc params)
               | (int(d <= params.epsilon* ret.T)  << 1)
               | (int(i >= params.maxiters) << 2);
     return ret;
+}
+
+#define TRACE_OR 1.6
+TraceResult relaxed_sphere_trace(in Ray ray, in SphereTraceDesc params)
+{
+	TraceResult ret = TraceResult(ray.Tmin, 0);
+	float rc = 0, rn;
+	float di = 0;
+	int i = 0;
+	do
+	{
+		di = rc * TRACE_OR;
+		rn = SDF(ray.P+ray.V*(ret.T + di)); 
+		if(di > rc + rn)
+		{
+			di = rc;
+			rn = SDF(ray.P+ray.V*(ret.T + di));
+		}
+		ret.T += di;
+		rc = rn;
+		++i;
+	} while (
+		ret.T < ray.Tmax &&       					// Stay within bound box
+		rn	  > params.epsilon * (ret.T + di) &&	// Stop if cone is close to surface
+		i     < params.maxiters);
+	ret.flags =  int(ret.T >= ray.Tmax)
+              | (int(di <= params.epsilon * (ret.T + di))  << 1)
+              | (int(i >= params.maxiters) << 2);
+	return ret;
+}
+
+#define STEP_SIZE_REDUCTION 0.95
+TraceResult enhanced_sphere_trace(in Ray ray, in SphereTraceDesc params)
+{
+	TraceResult ret = TraceResult(ray.Tmin, 0);
+	float rp = 0, rc = 0, rn = 0; //prev, curr, next
+	float di = 0;
+	int i = 0;
+	do {
+		di = rc + STEP_SIZE_REDUCTION * rc * max( (di - rp + rc) / (di + rp - rc), 0.6);
+		rn = SDF(ray.P+ray.V*(ret.T + di));
+		if(di > rc + rn)
+		{
+			di = rc;
+			rn = SDF(ray.P+ray.V*(ret.T + di));
+		}
+		ret.T += di;
+		rp = rc; rc = rn;
+		++i;
+	} while (
+		ret.T < ray.Tmax &&       			// Stay within bound box
+		rn	  > params.epsilon * ret.T &&	// Stop if cone is close to surface
+		i     < params.maxiters);
+
+	ret.flags =  int(ret.T >= ray.Tmax)
+              | (int(rn <= params.epsilon)  << 1)
+              | (int(i >= params.maxiters) << 2); 
+	return ret;
 }
 
 TraceResult quadric_trace(in Ray ray, in SphereTraceDesc params)
@@ -143,7 +202,10 @@ void main()
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
 	Ray r = Camera(coords.xy / windowSize, eye, at, windowSize);
 
-	TraceResult res = render_quadric?quadric_trace(r, SphereTraceDesc(0.001, max_iter)):sphere_trace(r, SphereTraceDesc(0.001, max_iter));
+	TraceResult res = render_quadric?quadric_trace(r, SphereTraceDesc(0.001, max_iter)):(
+		method == 0 ? sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
+		(method == 1 ? relaxed_sphere_trace(r, SphereTraceDesc(0.001, max_iter)) :
+					  enhanced_sphere_trace(r, SphereTraceDesc(0.001, max_iter))));
 
 
 	if (error_test)

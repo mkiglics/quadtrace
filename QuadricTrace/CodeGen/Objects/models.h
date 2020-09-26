@@ -22,5 +22,6 @@ MyExpr* model5_expr(float width = 1.0f, float height = 1.0f, float holeRadius = 
 MyExpr* model7_expr(float boxWidth = 1.0f, float boxHeight = 1.0f, int N = 3, int M = 3);
 MyExpr* model8_expr(int N = 2, int M = 2, int connectTubeCount = 3, Model2Attributes attr = Model2Attributes{});
 MyExpr* model9_expr(float r = 1.0f, float height = 0.3f, int holeCount = 4, int N = 3, int M = 3);
+MyExpr* model10_expr(float r = 2.0f);
 
 void build_kernel(const std::string& file_name, MyExpr* expr);

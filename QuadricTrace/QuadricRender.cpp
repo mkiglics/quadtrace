@@ -11,11 +11,11 @@ void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
 
-	csg_tree = demo_expr();
-	build_kernel("Shaders/sdf", csg_tree); // generates the function
+	csg_tree = model9_expr();
+	build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
 	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
-	if (!LoadSDF("Shaders/sdf"))
+	if (!LoadSDF("Shaders/sdf.tmp"))
 	{
 		LoadSDF(examples[0].second.c_str()); SaveSDF();
 	}
@@ -38,13 +38,13 @@ void QuadricRender::Init(int gridSize = 16)
 	frameTexture = df::Texture2D<glm::vec4>(w, h);
 
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
 	*eccComputeProgram << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
 
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
+	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
 
 	sam.AddResize([&](int w, int h) {*frameBuff = frameBuff->MakeResized(w, h); });
 
@@ -96,29 +96,25 @@ void QuadricRender::Render()
 	);
 }
 
-void QuadricRender::RunErrorTest(const char* filename, bool quadric, long max_frames, int max_steps, QuadricParam arg, int scene, SphereTrace sphere_trace_method)
+void QuadricRender::RunErrorTest(TestArg arg)
 {
-	quadricArgs = arg;
+	quadricArgs = arg.q_arg;
+	build_kernel("Shaders/sdf.tmp", csg_tree);
+	LoadSDF("Shaders/sdf.tmp"); Link();
+	csg_tree = arg.model;
 	long frame = 0;
-	if (scene < examples.size() && LoadSDF(examples[scene].second.c_str()))
-	{
-		SaveSDF();
-		Link();
-	}
-	else {
-		std::cout << "Could not open scene " << scene << std::endl;
-		return;
-	}
+	
 	sam.Run([&](float deltaTime)
 		{
-			if (frame == max_frames) sam.Quit();
+			if (frame == arg.max_frames) sam.Quit();
 			++frame;
 			cam.Update();
 
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << (int)quadric << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << max_steps;
+				<< "render_quadric" << (int)(arg.method == Quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
+				<< "trace_method" << (int) arg.method;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -131,47 +127,37 @@ void QuadricRender::RunErrorTest(const char* filename, bool quadric, long max_fr
 			frameCompProgram->Render();*/
 		}
 	);
-	SaveTexture(filename);
+	//SaveTexture(filename);
 }
 
-void QuadricRender::RunSpeedTest(const char* filename, bool quadric, long max_frames, int max_steps, QuadricParam arg, int scene, SphereTrace sphere_trace_method)
+double QuadricRender::RunSpeedTest(TestArg arg)
 {
-	quadricArgs = arg;
-	long frame = -50;
-	if (scene < examples.size() && LoadSDF(examples[scene].second.c_str()))
-	{
-		SaveSDF();
-		Link();
-	}
-	else {
-		std::cout << "Could not open scene " << scene << std::endl;
-		return;
-	}
+	csg_tree = arg.model;
+	quadricArgs = arg.q_arg;
+	build_kernel("Shaders/sdf.tmp", csg_tree);
+	LoadSDF("Shaders/sdf.tmp"); Link();
+	long frame = -10;
+	std::chrono::duration<double> elapsed;
+	
 	auto start = std::chrono::steady_clock::now();
 	sam.Run([&](float deltaTime)
 		{
 			if (frame == 0) {
 				start = std::chrono::steady_clock::now();
 			}
-			if (frame == max_frames)
+			if (frame == arg.max_frames)
 			{
 				auto end = std::chrono::steady_clock::now();
-				std::chrono::duration<double> elapsed = end - start;
-				std::ofstream out(filename);
-				if (out.is_open()) {
-					out << elapsed.count() << std::endl;
-					out << (max_frames - 50) / elapsed.count() << std::endl;
-					out.close();
-				}
+				elapsed = end - start;
 				sam.Quit();
 			}
 			++frame;
 			cam.Update();
-
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << (int)quadric << "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << max_steps;
+				<< "render_quadric" << (arg.method == Quadric ? 1 : 0) << "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps
+				<< "trace_method" << (int) arg.method;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -181,6 +167,7 @@ void QuadricRender::RunSpeedTest(const char* filename, bool quadric, long max_fr
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
 		}
 	);
+	return (arg.max_frames - 10) / elapsed.count();
 }
 
 void QuadricRender::SetView(glm::vec3 eye, glm::vec3 at, glm::vec3 up)
@@ -194,7 +181,7 @@ bool QuadricRender::Link()
 	//build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 	if (sdfComputeProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -202,7 +189,7 @@ bool QuadricRender::Link()
 	}
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	*program << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -212,7 +199,7 @@ bool QuadricRender::Link()
 	}
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
+	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -280,11 +267,11 @@ bool QuadricRender::LoadSDF(const char* name)
 }
 bool QuadricRender::SaveSDF()
 {
-	std::ofstream out("Shaders/sdf");
+	std::ofstream out("Shaders/sdf.tmp");
 	if (!out.is_open())
 	{
 		hasError = true;
-		errorMsg = "Cannot open Shaders/sdf";
+		errorMsg = "Cannot open Shaders/sdf.tmp";
 		return false;
 	}
 	out << text.data();

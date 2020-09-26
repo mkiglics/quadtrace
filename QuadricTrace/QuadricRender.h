@@ -6,17 +6,24 @@
 #include <Dragonfly/detail/Texture/Texture3D.h>
 #include <fstream>
 #include "CodeGen/ui.h"
-#include "CodeGen/demo.h"
+#include "CodeGen/Objects/models.h"
 
 #define DEBUG
 
 class QuadricRender {
 public:
-	enum SphereTrace {Simple, Enhanced, Relaxed};
-	struct QuadricParam {
+	enum SphereTrace {Simple, Relaxed, Enhanced, Quadric};
+	struct QuadricArg {
 		float delta = 0.8;
 		int ray_count = 70;
 		float correction = 0.01;
+	};
+	struct TestArg {
+		MyExpr* model;
+		long max_frames;
+		int max_steps;
+		QuadricArg q_arg;
+		SphereTrace method = Quadric;
 	};
 
 	QuadricRender() :text({ ' ' }) {}
@@ -25,8 +32,8 @@ public:
 	void Render();
 
 	void SetView(glm::vec3, glm::vec3, glm::vec3);
-	void RunErrorTest(const char* filename, bool quadric, long max_frames, int max_steps, QuadricParam arg = {}, int scene = 0, SphereTrace sphere_trace_method = Simple);
-	void RunSpeedTest(const char* filename, bool quadric, long max_frames, int max_steps, QuadricParam arg = {}, int scene = 0, SphereTrace sphere_trace_method = Simple);
+	void RunErrorTest(TestArg arg);
+	double RunSpeedTest(TestArg arg);
 
 private:
 	void Preprocess();
@@ -41,7 +48,7 @@ private:
 	glm::ivec3 grid;
 	std::vector<char> text;
 	int useQuadricTrace = 1;
-	QuadricParam quadricArgs;
+	QuadricArg quadricArgs;
 
 	df::Texture3D<float> sdfTexture;
 	df::Texture3D<glm::vec4> eccentricityTexture;
