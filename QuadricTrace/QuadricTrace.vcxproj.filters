@@ -84,6 +84,18 @@
     <None Include="Shaders\Examples\spheres.glsl">
       <Filter>Shaders\Examples</Filter>
     </None>
+    <None Include="Shaders\quadric_trace.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\sphere_trace.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\relaxed_sphere_trace.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\enhanced_sphere_trace.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />

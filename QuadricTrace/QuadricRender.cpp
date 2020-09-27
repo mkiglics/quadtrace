@@ -12,7 +12,7 @@ void QuadricRender::Init(int gridSize = 16)
 	grid = glm::ivec3(gridSize);
 
 	csg_tree = model9_expr();
-	build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
+	//build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
 	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
 	if (!LoadSDF("Shaders/sdf.tmp"))
@@ -76,7 +76,7 @@ void QuadricRender::Render()
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << useQuadricTrace << "delta" << quadricArgs.delta << "error_test" << 0;
+				<< "delta" << quadricArgs.delta << "error_test" << 0;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -100,6 +100,7 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 {
 	quadricArgs = arg.q_arg;
 	csg_tree = arg.model;
+	trace_method = arg.method;
 	build_kernel("Shaders/sdf.tmp", csg_tree);
 	LoadSDF("Shaders/sdf.tmp"); Link();
 	
@@ -123,7 +124,7 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
 
-			if (fr == 3) {
+			if (fr == 1) {
 				glReadPixels(0, 0, w, h, GL_RED, GL_FLOAT, &data[0]);
 				sam.Quit();
 			}
@@ -138,6 +139,7 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 {
 	csg_tree = arg.model;
 	quadricArgs = arg.q_arg;
+	trace_method = arg.method;
 	build_kernel("Shaders/sdf.tmp", csg_tree);
 	LoadSDF("Shaders/sdf.tmp"); Link();
 	long frame = -10;
@@ -160,8 +162,7 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << (arg.method == Quadric ? 1 : 0) << "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps
-				<< "trace_method" << (int) arg.method;
+				<< "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -203,7 +204,7 @@ bool QuadricRender::Link()
 	}
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << df::LinkProgram;
+	*frameCompProgram << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp  << "Shaders/frame.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -242,7 +243,7 @@ void QuadricRender::RenderUI()
 	}
 	ImGui::NewLine();
 #ifdef DEBUG
-	if (ImGui::Button(useQuadricTrace ? "Render using quadric tracing" : "Render using sphere tracing")) useQuadricTrace = !useQuadricTrace;
+	if (ImGui::Button(trace_method == Quadric ? "Render using quadric tracing" : "Render using sphere tracing")) trace_method = (trace_method == Quadric ? Simple : Quadric);
 #endif
 	if (hasError)
 		ImGui::TextColored({ 255, 0, 0, 255 }, errorMsg.c_str());

@@ -12,11 +12,11 @@
 using namespace std;
 using namespace glm;
 
-MyExpr* model10_expr(float r) {
+MyExpr* model10_expr(int n) {
 
     MyExpr* out = nullptr;
     
-    MyExpr* b = box<Fields>(0.5, 0.5, 0.5);
+   /* MyExpr* b = box<Fields>(0.5, 0.5, 0.5);
     for (int i = 0; i < 8; ++i)
     {
         for (int j = 0; j < 8; ++j)
@@ -30,9 +30,15 @@ MyExpr* model10_expr(float r) {
             }
         }
 
-    }
+    }*/
 
-    out = b;
+    for (int i = 1; i <= n; i *= 2)
+    {
+        if (out == nullptr) out = sphere<Fields>(0.5);
+        out = union_op<Fields>(out, move({i, 0, 0}, out));
+        out = union_op<Fields>(out, move({ 0, i, 0 }, out));
+        out = union_op<Fields>(out, move({ 0, 0, i }, out));
+    }
 
     return out;
 }

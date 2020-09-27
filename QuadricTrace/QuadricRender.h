@@ -14,7 +14,7 @@ class QuadricRender {
 public:
 	enum SphereTrace {Simple, Relaxed, Enhanced, Quadric};
 	struct QuadricArg {
-		float delta = 0.8;
+		float delta = 0.008;
 		int ray_count = 70;
 		float correction = 0.01;
 	};
@@ -46,7 +46,7 @@ private:
 	std::string errorMsg = "";
 	glm::ivec3 grid;
 	std::vector<char> text;
-	int useQuadricTrace = 1;
+	SphereTrace trace_method = Quadric;
 	QuadricArg quadricArgs;
 
 	df::Texture3D<float> sdfTexture;
@@ -74,6 +74,12 @@ private:
 		{"Menger Spone", "Shaders/Examples/menger.glsl"},
 		{"Spheres", "Shaders/Examples/spheres.glsl"}
 	};
+	const std::vector<df::detail::_CompShader> trace_path = {
+		"Shaders/sphere_trace.glsl"_comp,
+		"Shaders/relaxed_sphere_trace.glsl"_comp,
+		"Shaders/enhanced_sphere_trace.glsl"_comp,
+		"Shaders/quadric_trace.glsl"_comp
+	};	
 
 	//codegen
 	MyExpr *csg_tree;
