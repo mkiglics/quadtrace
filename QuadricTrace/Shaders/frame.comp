@@ -3,18 +3,20 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 restrict writeonly uniform image2D frameData;
 
-const float MAX_ITERATIONS = 100;
+uniform int max_iter = 150;
 const float MAX_DISTANCE = 10000;
-const float EPSILON = 0.01;
+const float EPSILON = 0.001;
 
 uniform sampler3D eccentricity;
 uniform sampler3D sdf_values;
 uniform ivec3 N;
 
-uniform int max_iter = 150;
 uniform float delta = 0.8;
 
 uniform vec3 lightPos = vec3(50, 50, 50);
+
+uniform int showQuadric = 0;
+uniform ivec3 showcaseQuadricCoord = ivec3(0);
 
 
 float tanfov = tan(radians(45)/2);
@@ -63,27 +65,62 @@ vec3 gradient(in ivec3 coords)
 vec3 lighting(in vec3 p)
 {
 	vec3 ambient = vec3(0.1, 0.1, 0.1);
-	return ambient;
-//	vec3 n = getNormal(p,N);
-//	vec3 toLight = -normalize(p - lightPos);
-//	vec3 diffuse = vec3(0.6, 0.6, 0.6) * clamp(dot(n, toLight), 0, 1);
-//	vec3 lightDir = p-lightPos;
-//	vec3 ref = normalize(reflect(lightDir, n));
-//	vec3 e = normalize(eye - p);
-//	vec3 specular = vec3(1) * pow(clamp(dot(ref,e), 0, 1), 32);
-//
-//	return ambient + diffuse + specular;
+	vec3 n = getNormal(p,N);
+	vec3 toLight = -normalize(p - lightPos);
+	vec3 diffuse = vec3(0.6, 0.6, 0.6) * clamp(dot(n, toLight), 0, 1);
+	vec3 lightDir = p-lightPos;
+	vec3 ref = normalize(reflect(lightDir, n));
+	vec3 e = normalize(eye - p);
+	vec3 specular = vec3(pow(clamp(dot(ref,e), 0, 1), 32));
+
+	return ambient + diffuse + specular;
+}
+
+vec3 quadricLighting(in vec3 p) 
+{
+	vec3 ambient = vec3(0.1, 0.1, 0.1);
+	// TODO calculate the normal of quadric
+	vec3 n = vec3(0, 1, 0);
+	vec3 toLight = -normalize(p - lightPos);
+	vec3 diffuse = vec3(0.6, 0.6, 0.6) * clamp(dot(n, toLight), 0, 1);
+
+	return ambient + diffuse;
+}
+
+Ray Camera(vec2 pix, vec3 eye, vec3 at, vec2 dim)
+{    
+	vec3 w = normalize(at-eye);
+    vec3 u = normalize(cross(w,vec3(0,1,0)));
+	vec3 v = cross(u,w);
+    
+    vec2 px = (pix*2.-1.)*1.*normalize(dim);
+    
+    return Ray(eye,							//P
+               0.1,							//minT
+               normalize(w+px.x*u+px.y*v),	//V
+               MAX_DISTANCE);				//maxT
 }
 
 TraceResult trace(in Ray r, in SphereTraceDesc params);
+vec2 quadricGetIntersectionParamters(Ray cameraRay, ivec3 quadricCoord);
 
 void main()
 {
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
 	Ray r = Camera(coords.xy / windowSize, eye, at, windowSize);
 
-	TraceResult res = trace(r, SphereTraceDesc(0.001, max_iter));
+	TraceResult res = trace(r, SphereTraceDesc(EPSILON, max_iter));
 
+	// get intersection parameter with quadric
+	vec4 quadricColor = vec4(0);
+	vec2 quadricT12 = showQuadric == 0 ? vec2(-1) : quadricGetIntersectionParamters(r, showcaseQuadricCoord);
+	bool quadricIntersected = (quadricT12.x > 0 && !isinf(quadricT12.x)) || (quadricT12.y > 0 && !isinf(quadricT12.y));
+
+	// mix color for quadric
+	if (quadricIntersected) 
+	{
+		quadricColor = vec4(0.3 * vec3(1.0, 0.0, 0.0) * quadricLighting(r.P + r.V * quadricT12.x), 1);
+	}
 
 	if (error_test == 1)
 	{
@@ -91,10 +128,22 @@ void main()
 		imageStore(frameData, coords, vec4(res.T/r.Tmax, 0, 0, 1));
 		return;
 	}
-	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1)); return;}
+	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1) + quadricColor); return;}
 	if (bool(res.flags & 4))		{imageStore(frameData, coords, vec4(1, 0, 0, 1)); return;}
-	vec3 p = eye + r.V*res.T;
+	vec3 p = eye + r.V * res.T;
 
-	vec3 color = lighting(p);
-	imageStore(frameData, coords, vec4(color, 1));
+	vec3 color;
+	if (quadricIntersected) 
+	{
+		const vec3 inFrontOfQuadric = vec3(207, 216, 220) / 255.0;
+		const vec3 insideQuadric = vec3(144, 164, 174) / 255.0;
+		const vec3 behindQuadric = vec3(55, 71, 79) / 255.0;
+		color = (res.T < quadricT12.x) ? inFrontOfQuadric :
+				(res.T < quadricT12.y) ? insideQuadric    : behindQuadric;
+	} 
+	else
+	{
+		color = lighting(p);
+	}
+	imageStore(frameData, coords, vec4(color, 1) + quadricColor);
 }

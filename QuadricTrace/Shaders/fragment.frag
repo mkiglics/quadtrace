@@ -5,7 +5,6 @@ out vec4 fs_out_col;
 
 uniform sampler2D frame;
 
-
 void main()
 {
 	fs_out_col = vec4(texture(frame, fs_in_tex).rgb, 1);

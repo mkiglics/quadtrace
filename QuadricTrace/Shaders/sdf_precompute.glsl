@@ -13,6 +13,3 @@ void main()
 	//storing the SDF values in the grid
 	imageStore(sdf_values, coords, vec4(SDF((coords - vec3(gl_NumWorkGroups.xyz-vec3(1))/2.0))));
 }
-
-
-

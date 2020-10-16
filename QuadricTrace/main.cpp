@@ -2,7 +2,7 @@
 #include "CodeGen/Objects/models.h"
 #include <sstream>
 
-#define TEST
+// #define TEST
 
 MyExpr* models[] = {
 	model1_expr(),

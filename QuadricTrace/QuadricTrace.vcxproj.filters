@@ -87,15 +87,18 @@
     <None Include="Shaders\quadric_trace.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\sphere_trace.glsl">
+    <None Include="Shaders\SphereTrace\enhanced_sphere_trace.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\relaxed_sphere_trace.glsl">
+    <None Include="Shaders\SphereTrace\relaxed_sphere_trace.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\enhanced_sphere_trace.glsl">
+    <None Include="Shaders\SphereTrace\sphere_trace.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\common.comp" />
+    <None Include="Shaders\values.comp" />
+    <None Include="Shaders\Debug\quadric_showcase.comp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />

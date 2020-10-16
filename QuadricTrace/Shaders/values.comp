@@ -1,0 +1,61 @@
+#version 450
+
+uniform sampler3D sdf_values;
+
+struct Values {
+	float k;
+	float dist;
+	vec3 normal;
+};
+
+vec4 encode(in Values values) {
+	return vec4(values.dist, (values.k + 2) * values.normal);
+}
+
+Values decode(in vec4 encoded) {
+	float normalLength = length(encoded.yzw);
+	return Values(normalLength - 2, encoded.x, encoded.yzw / normalLength);
+}
+
+// length(normal) = k, where k needs to be > 0
+
+
+vec3 computeGradient(vec3 p) 
+{
+    return normalize(vec3(
+        SDF(vec3(p.x + EPSILON, p.y, p.z)) - SDF(vec3(p.x - EPSILON, p.y, p.z)),
+        SDF(vec3(p.x, p.y + EPSILON, p.z)) - SDF(vec3(p.x, p.y - EPSILON, p.z)),
+        SDF(vec3(p.x, p.y, p.z  + EPSILON)) - SDF(vec3(p.x, p.y, p.z - EPSILON))
+    ));
+}
+
+/* Returns the direction from the center of the cell towards the surface */
+vec3 fetchGradient(ivec3 coords)
+{
+	float[8] vert;
+	float[6] c;
+	for (int x = 0; x < 2; ++x)														//		   3-------- 7
+	{																				//		  /|        /|
+		for (int y = 0; y < 2; ++y)													//		 / |       / |
+		{																			//		2-------- 6  |			^   /
+			for (int z = 0; z < 2; ++z)												//		|  |      |  |			|y /z
+			{																		//		|  1------|--5			| /
+				vert[x * 4 + y * 2 + z] = 											//		| /       | /           |/    x     
+					texelFetch(sdf_values, ivec3(coords + vec3(x, y, z)), 0).r;		//		|/        |/			------->
+			}																		//		0-------- 4
+		}
+	}
+
+	c[0] = (vert[0] + vert[1] + vert[2] + vert[3]);
+	c[1] = (vert[4] + vert[5] + vert[6] + vert[7]);
+	c[2] = (vert[0] + vert[1] + vert[4] + vert[5]);
+	c[3] = (vert[6] + vert[7] + vert[2] + vert[3]);
+	c[4] = (vert[0] + vert[4] + vert[2] + vert[6]);
+	c[5] = (vert[5] + vert[1] + vert[7] + vert[3]);
+
+
+	vec3 norm = vec3(c[0] - c[1], c[2] - c[3], c[4] - c[5]);
+
+	//if close to zero, return [0,1,0]
+	return length(norm) > EPSILON ? normalize(norm) : vec3(0, 1, 0);
+}

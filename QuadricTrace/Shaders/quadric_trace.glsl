@@ -1,4 +1,5 @@
 #define STEP_SIZE_REDUCTION 0.95
+
 TraceResult trace(in Ray ray, in SphereTraceDesc params)
 {
     TraceResult ret = TraceResult(ray.Tmin, 0);
@@ -25,7 +26,8 @@ TraceResult trace(in Ray ray, in SphereTraceDesc params)
 		t = intersectQuadric(rot*(p-round(p)), rot*ray.V, k);
 		d = max(t, dist - 0.7);
 
-		if (d<10 * params.epsilon * ret.T) {						 
+		if (d < 10 * params.epsilon * ret.T) 
+		{						 
 			break;
 		}
 		ret.T += d;
