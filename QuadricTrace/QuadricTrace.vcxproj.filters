@@ -96,9 +96,9 @@
     <None Include="Shaders\SphereTrace\sphere_trace.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\common.comp" />
     <None Include="Shaders\values.comp" />
     <None Include="Shaders\Debug\quadric_showcase.comp" />
+    <None Include="Shaders\common.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />

@@ -63,6 +63,7 @@ void QuadricRender::Preprocess()
 
 void QuadricRender::Render()
 {
+	int frameCount = 0;
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
 			cam.Update();
@@ -93,6 +94,10 @@ void QuadricRender::Render()
 			frameCompProgram->Render();
 #endif
 			RenderUI();
+
+			if (++frameCount == 5) {
+				SaveImageZ(eccentricityTexture, "Eccentricity");
+			}
 		}
 	);
 }
@@ -186,7 +191,8 @@ bool QuadricRender::Link()
 	//build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/common.comp"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
+	*sdfComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp 
+					   << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 	if (sdfComputeProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -194,7 +200,7 @@ bool QuadricRender::Link()
 	}
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/common.comp"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -204,7 +210,7 @@ bool QuadricRender::Link()
 	}
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/common.comp"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
+	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
 	if (hasError || frameCompProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -214,7 +220,7 @@ bool QuadricRender::Link()
 	}
 	delete eccComputeProgram;
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/common.comp"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
+	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
 	if (hasError || eccComputeProgram->GetErrors().size() > 0) {
 		hasError = true;
 		if (eccComputeProgram->GetErrors().size() > 0)

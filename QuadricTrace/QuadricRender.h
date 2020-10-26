@@ -90,7 +90,7 @@ private:
 	MyExpr *csg_tree;
 };
 
-/*template<typename InternalFormat_>
+template<typename InternalFormat_>
 void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string& path)
 {
 	int bufSizePerLevel = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
@@ -126,4 +126,4 @@ void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string
 	//SDL_FreeSurface(surf);
 
 	myfile.close();
-}*/
+}

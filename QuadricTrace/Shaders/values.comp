@@ -1,6 +1,6 @@
 #version 450
 
-uniform sampler3D sdf_values;
+uniform sampler3D samplerValues;
 
 struct Values {
 	float k;
@@ -9,12 +9,12 @@ struct Values {
 };
 
 vec4 encode(in Values values) {
-	return vec4(values.dist, (values.k + 2) * values.normal);
+	return vec4(values.dist, (values.k + 2.0f) * values.normal);
 }
 
 Values decode(in vec4 encoded) {
 	float normalLength = length(encoded.yzw);
-	return Values(normalLength - 2, encoded.x, encoded.yzw / normalLength);
+	return Values(normalLength - 2.0f, encoded.x, encoded.yzw / normalLength);
 }
 
 // length(normal) = k, where k needs to be > 0

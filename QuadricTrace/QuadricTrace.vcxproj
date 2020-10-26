@@ -144,7 +144,7 @@
     <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\common.comp" />
+    <None Include="Shaders\common.glsl" />
     <None Include="Shaders\Debug\quadric_showcase.comp" />
     <None Include="Shaders\SphereTrace\enhanced_sphere_trace.glsl" />
     <None Include="Shaders\Examples\blocks.glsl" />

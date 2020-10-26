@@ -11,5 +11,5 @@ void main()
 	ivec3 coords = ivec3(gl_GlobalInvocationID.xyz);
 
 	//storing the SDF values in the grid
-	imageStore(sdf_values, coords, vec4(SDF((coords - vec3(gl_NumWorkGroups.xyz-vec3(1))/2.0))));
+	imageStore(sdf_values, coords, vec4(SDF(texelToGlobal(coords, ivec3(gl_NumWorkGroups.xyz)))));
 }

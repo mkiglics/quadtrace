@@ -42,27 +42,19 @@ float intersectQuadric(in vec3 p, in vec3 v, in float k)
 }
 
 // ray and quadric intersection
-float intersectQuadricSecond(in vec3 p, in vec3 v, in float k)
+vec2 intersectQuadricBoth(in vec3 p, in vec3 v, in float k)
 {
-	if (k < -0.99) return 0;
-	vec3 ABC = getABC(k);
-	vec2 t12 = intersectionPoints(ABC, p, v);
-	float t1 = t12.x, t2 = t12.y;
-	
-	//remove one of the branches of a hyperboloid
-	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
-	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
+	if (k < -0.99) return vec2(0);
+	return intersectionPoints(getABC(k), p, v);
+}
 
-	float t = 0;
-	if (k > 0) {
-		if (t2 == inf) t = t1;
-		else if (t1<0 && t1>-inf) t = t2;
-		else if (t2 > 0) t = 0;
-		else t = inf;
-	} else  {
-		if (t1==-inf) t = t2;
-		else if (t2>0 && t2<inf) t = t1;
-		else if (t1<0) t = inf;
-	}
-	return t;
+vec3 quadricGetNormal(vec3 point, float k) {
+	vec3 ABC = getABC(k);
+
+	// from the implicit function's gradient
+	return normalize(vec3(
+		ABC.x * point.x,
+		ABC.x * point.y,
+		ABC.y * point.z + ABC.z / 2
+	));
 }

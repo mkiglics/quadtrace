@@ -9,10 +9,10 @@ restrict writeonly uniform image3D ecc;
 uniform sampler3D sdf_values;
 
 uniform int useConeTrace = 0;
-uniform int ray_count = 4; 
  
 /* Problems with looking down at things 
 */ 
+/*uniform int ray_count = 4; 
 const float TETRAHEDRON_TAN = 2*sqrt(2); 
 // tetrahedron 
 uniform vec3 ray_directions[]= { 
@@ -24,10 +24,11 @@ uniform vec3 ray_directions[]= {
 uniform float ray_half_angles_tan[] = { 
 	TETRAHEDRON_TAN, TETRAHEDRON_TAN, 
 	TETRAHEDRON_TAN, TETRAHEDRON_TAN 
-}; 
+}; */
  
 // cube 
-/*uniform vec3 ray_directions[]= { 
+/*uniform int ray_count = 6;
+uniform vec3 ray_directions[]= { 
 	vec3(0, 0, 1), 
 	vec3(0, 0, -1), 
 	vec3(0, 1, 0), 
@@ -39,10 +40,11 @@ uniform float ray_half_angles_tan[] = {
 	sqrt(2), sqrt(2), 
 	sqrt(2), sqrt(2), 
 	sqrt(2), sqrt(2) 
-};*/ 
+};*/
  
 // octahedron 
-/*uniform vec3 ray_directions[]= { 
+uniform int ray_count = 8;
+uniform vec3 ray_directions[]= { 
 	vec3(1, 1, 1) / sqrt(3), 
 	vec3(-1, -1, -1) / sqrt(3), 
 	vec3(-1, 1, 1) / sqrt(3), 
@@ -55,7 +57,7 @@ uniform float ray_half_angles_tan[] = {
 uniform float ray_half_angles_tan[] = { 
 	2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 
 	2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2) 
-};*/ 
+};
  
 #define PHI 1.61803398874989484820458683436 
 /*const float ICO_TAN = 4 / (3 + sqrt(5)); 
@@ -254,42 +256,63 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 	ConeTraceResult ret = ConeTraceResult(ray.Tmin, vec3(0.0f), 0);
 
 	// current distance to the object
-    float d;
+    float d, coneSurfaceD;
 	float lipschitz = 1 + abs(desc.tanHalfAngle);
     
     int i = 0; 
 	
 	do
     {
-		d = texelFetch(sdf_values, globalToTexel(ray.P + ret.T * ray.V, dim), 0).r;
-		// d = SDF(ray.P + ret.T * ray.V);
+		//d = texelFetch(sdf_values, globalToTexel(ray.P + ret.T * ray.V, dim), 0).r;
+		d = SDF(ray.P + ret.T * ray.V);
 
-        d = (d - desc.startingRadius - ret.T * desc.tanHalfAngle) / lipschitz;
-        ret.T += d;
+        coneSurfaceD = (d - desc.startingRadius - ret.T * desc.tanHalfAngle) / lipschitz;
+        ret.T += coneSurfaceD;
         ++i;
     } while (
-		ret.T < ray.Tmax     &&       		// Stay within bound box
-		d	  > desc.epsilon &&	            // Stop if close to surface
-		i     < desc.maxiters	        	// Stop if too many iterations
+		ret.T < ray.Tmax &&       		// Stay within bound box
+		d     > desc.epsilon &&	            // Stop if close to surface
+		coneSurfaceD > desc.epsilon &&
+		i < desc.maxiters	        	// Stop if too many iterations
 	);
 
 	ret.p = ray.P + ret.T * ray.V;
+
 	// when we are at the end and the cone intersected this vector can be used to determine
 	// the intersection point of the base of the cone and the sdf
 	/*if (d <= desc.epsilon) {
-		vec3 grad = computeGradient(ret.p);
+		/*vec3 grad = computeGradient(ret.p);
 		// project grad onto plane at the end of the cone
 		vec3 planeNormal = ray.V;
 
 		grad = normalize(grad - dot(grad, planeNormal) * planeNormal);
 		ret.p += (desc.startingRadius + ret.T * desc.tanHalfAngle + d) * grad;
 	}*/
+
+	if (coneSurfaceD <= desc.epsilon)
+	{
+		vec3 grad = computeGradient(ret.p);
+
+		float cosaSqrd = 1.0 / (desc.tanHalfAngle * desc.tanHalfAngle + 1);
+		float cosa = sqrt(cosaSqrd);
+		float sinaSqrd = 1 - cosaSqrd;
+		float sina = sqrt(sinaSqrd);
+
+		float cosb = dot(-ray.V, grad);
+		float sinbSqrd = 1 - cosb * cosb;
+		float sinb = sqrt(sinbSqrd);
+
+		float sing = sina * cosb + cosa * sinb;
+		float l = sina / sing * ret.T;
+
+		ret.p += grad * l;
+	}
     
 	// bit 0:   distance condition:     true if travelled to far t > t_max
 	// bit 1:   surface condition:      true if distance to surface is small < error threshold
     // bit 2:   iteration condition:    true if took too many iterations
     ret.flags =  int(ret.T >= ray.Tmax)
-              | (int(d <= desc.epsilon)  << 1)
+              | (int(d <= desc.epsilon || coneSurfaceD <= desc.epsilon)  << 1)
               | (int(i >= desc.maxiters) << 2);
 
 	return ret;
@@ -299,10 +322,9 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 void main()
 {
 	ivec3 coords = ivec3(gl_GlobalInvocationID.xyz);
-
 	
 	vec3 norm = gradient(coords);
-	vec3 p = texelToGlobal(coords,ivec3(gl_NumWorkGroups.xyz));
+	vec3 p = texelToGlobal(coords, ivec3(gl_NumWorkGroups.xyz));
 
 	float k = 1;
 
@@ -345,17 +367,22 @@ void main()
 				0.0,
 				normalize(ray_directions[i]),
 				100);
-			ConeTraceResult res = cone_trace(r, ConeTraceDesc(0.1f, 100, 0.0f, ray_half_angles_tan[i]), ivec3(gl_NumWorkGroups.xyz)+ivec3(1));
+
+			ConeTraceResult res = cone_trace(r, 
+				ConeTraceDesc(0.1f, 100, 0.0f, ray_half_angles_tan[i]), 
+				ivec3(gl_NumWorkGroups.xyz) + ivec3(1)
+			);
 			if (bool(res.flags & 1) || bool(res.flags & 4)) { continue; }
 
 			vec3 ray_dir = normalize(res.p - p);
 
 			// if hits the surface, evaluate minimal k
-			float scale = length(ray_dir);
+			float scale = length(res.p - p);
 			float cosPhi = dot(ray_dir, norm);
 			float sinPhi = length(cross(ray_dir, norm));
 			vec2 pos2d = vec2(sinPhi, cosPhi) * scale;
 			k = min(k, mix(getK(pos2d), -1.0, correction));
+			// k = res.T;
 		}
 	}
 
