@@ -93,7 +93,7 @@ private:
 template<typename InternalFormat_>
 void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string& path)
 {
-	int bufSizePerLevel = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
+	/*int bufSizePerLevel = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
 	constexpr GLenum internalFormat = df::detail::getInternalChannel<InternalFormat_>();
 	constexpr GLenum baseType = df::detail::getInternalBaseType<InternalFormat_>();
 
@@ -125,5 +125,5 @@ void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string
 	}
 	//SDL_FreeSurface(surf);
 
-	myfile.close();
+	myfile.close();*/
 }

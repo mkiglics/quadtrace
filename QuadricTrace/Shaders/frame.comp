@@ -1,4 +1,5 @@
 #version 450
+
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 restrict writeonly uniform image2D frameData;
@@ -15,7 +16,9 @@ uniform float delta = 0.8;
 
 uniform vec3 lightPos = vec3(50, 50, 50);
 
+// 1 if debug quadric should be shown 0 if not
 uniform int showQuadric = 0;
+// Stores which quadric should be shown
 uniform ivec3 showcaseQuadricCoord = ivec3(0);
 
 
@@ -26,7 +29,7 @@ uniform vec2 windowSize;
 uniform int error_test = 0;
 
 TraceResult trace(in Ray r, in SphereTraceDesc params);
-vec2 quadricGetIntersectionParamters(Ray cameraRay, ivec3 quadricCoord);
+vec3 quadricGetIntersectionParamters(Ray cameraRay, ivec3 quadricCoord);
 vec3 quadricCalculateNormal(vec3 point, ivec3 quadricCoord);
 
 vec3 getNormal(vec3 p, vec3 dim) 
@@ -80,19 +83,21 @@ vec3 lighting(in vec3 p)
 	return ambient + diffuse + specular;
 }
 
-vec3 quadricLighting(in vec3 p) 
+/*
+ * Given a point on the quadric (in world space and not in local space) and the position of that quadric
+ * it returns a fragment color according to the Blinn-Phong model.
+ */
+vec3 quadricLighting(in vec3 p, in ivec3 quadricPosition) 
 {
-	vec3 lightPos = vec3(0, 150, 0);
-	vec3 ambient = vec3(0.5, 0.0, 0.0);
-	vec3 n = quadricCalculateNormal(p, showcaseQuadricCoord);
-	vec3 toLight = -normalize(p - lightPos);
-	vec3 diffuse = vec3(0.6, 0.3, 0.3) * clamp(dot(n, toLight), 0, 1);
-	vec3 lightDir = p-lightPos;
-	vec3 ref = normalize(reflect(lightDir, n));
+	vec3 ambient = vec3(0.1, 0.1, 0.1);
 	vec3 e = normalize(eye - p);
-	vec3 specular = vec3(pow(clamp(dot(ref,e), 0, 1), 32));
+	vec3 n = quadricCalculateNormal(p - quadricPosition, quadricPosition);
+	vec3 toLight = normalize(lightPos - p);
+	vec3 diffuse = vec3(0.2, 1.0, 0.2) * clamp(dot(n, toLight), 0, 1);
+	vec3 lightDir = p - lightPos;
+	vec3 ref = normalize(reflect(lightDir, n));
+	vec3 specular = vec3(pow(clamp(dot(ref, e), 0, 1), 32));
 
-	// return normalize(n);
 	return ambient + diffuse + specular;
 }
 
@@ -110,19 +115,95 @@ Ray Camera(vec2 pix, vec3 eye, vec3 at, vec2 dim)
                MAX_DISTANCE);				//maxT
 }
 
-vec3 getQuadricColor(Ray cameraRay, ivec3 quadricPos, vec3 quadricDir, float k) 
+bool doesHitParcel(in Ray r, in ivec3 parcelPos)
 {
-	mat3 rot = getRotation(quadricDir);
-	vec2 tValues = intersectQuadricBoth(rot * (cameraRay.P - quadricPos), rot * cameraRay.V, k);
-	bool quadricIntersected = (tValues.x > 0 && !isinf(tValues.x)) || (tValues.y > 0 && !isinf(tValues.y));
+	float tmin = (parcelPos.x     - r.P.x) / r.V.x; 
+    float tmax = (parcelPos.x + 1 - r.P.x) / r.V.x; 
+ 
+    if (tmin > tmax) 
+	{
+		float temp = tmin;
+		tmin = tmax;
+		tmax = temp;
+	}
+ 
+    float tymin = (parcelPos.y     - r.P.y) / r.V.y; 
+    float tymax = (parcelPos.y + 1 - r.P.y) / r.V.y; 
+ 
+    if (tymin > tymax) 
+	{
+		float temp = tymin;
+		tymin = tymax;
+		tymax = temp;
+	}
+ 
+    if ((tmin > tymax) || (tymin > tmax)) 
+        return false; 
+ 
+    if (tymin > tmin) 
+        tmin = tymin; 
+ 
+    if (tymax < tmax) 
+        tmax = tymax; 
+ 
+    float tzmin = (parcelPos.z     - r.P.z) / r.V.z; 
+    float tzmax = (parcelPos.z + 1 - r.P.z) / r.V.z; 
+ 
+    if (tzmin > tzmax) 
+	{
+		float temp = tzmin;
+		tzmin = tzmax;
+		tzmax = temp;
+	}
+ 
+    if ((tmin > tzmax) || (tzmin > tmax)) 
+        return false; 
+ 
+    if (tzmin > tmin) 
+        tmin = tzmin; 
+ 
+    if (tzmax < tmax) 
+        tmax = tzmax; 
+ 
+    return true; 
+}
 
+/*
+ * Based on the camera ray and the trace result for that ray it returns the color the pixel takes.
+ * That may consist of the quadricColor and the objectColor depending on how this function's output is used.
+*/
+void getQuadricAndObjectColor(in Ray cameraRay, in TraceResult res, out vec3 quadricColor, out vec3 objectColor) 
+{
+	// get intersection parameter with quadric
+	vec3 quadricT12R = showQuadric == 0 ? vec3(-1) : quadricGetIntersectionParamters(cameraRay, showcaseQuadricCoord);
+	
+	bool quadricIntersected = quadricT12R.z > 0 && !isinf(quadricT12R.z);
+	//quadricIntersected = quadricT12R.x > 0 && quadricT12R.y > 0 && (!isinf(quadricT12R.x) || !isinf(quadricT12R.y));
+
+	// mix color for quadric
 	if (quadricIntersected) 
 	{
-		return quadricLighting(cameraRay.P + cameraRay.V * min(tValues.x, tValues.y));
-	}
+		float minQuadricT = min(quadricT12R.x, quadricT12R.y);
+		float maxQuadricT = max(quadricT12R.x, quadricT12R.y);
+
+		quadricColor = quadricLighting(cameraRay.P + cameraRay.V * quadricT12R.z, showcaseQuadricCoord);
+
+		const vec3 inFrontOfQuadric = vec3(255, 0, 0) / 255.0;
+		const vec3 insideQuadric = vec3(0, 255, 0) / 255.0;
+		const vec3 behindQuadric = vec3(0, 0, 255) / 255.0;
+
+		objectColor = (res.T < minQuadricT) ? inFrontOfQuadric :
+				      (res.T < maxQuadricT) ? insideQuadric    : behindQuadric;
+	} 
 	else
 	{
-		return vec3(0);
+		quadricColor = vec3(0);
+		objectColor = lighting(eye + cameraRay.V * res.T);
+	}
+
+	if (doesHitParcel(cameraRay, showcaseQuadricCoord)) 
+	{
+		quadricColor = mix(vec3(1, 1, 0), quadricColor, 0.5);
 	}
 }
 
@@ -133,18 +214,8 @@ void main()
 
 	TraceResult res = trace(r, SphereTraceDesc(EPSILON, max_iter));
 
-	// get intersection parameter with quadric
-	vec4 quadricColor = vec4(0);
-	vec2 quadricT12 = showQuadric == 0 ? vec2(-1) : quadricGetIntersectionParamters(r, showcaseQuadricCoord);
-	bool quadricIntersected = (quadricT12.x > 0 && !isinf(quadricT12.x)) || (quadricT12.y > 0 && !isinf(quadricT12.y));
-	float minQuadricT = min(quadricT12.x, quadricT12.y);
-	float maxQuadricT = max(quadricT12.x, quadricT12.y);
-
-	// mix color for quadric
-	if (quadricIntersected) 
-	{
-		quadricColor = vec4(quadricLighting(r.P + r.V * minQuadricT), 1);
-	}
+	vec3 quadricColor, objectColor;
+	getQuadricAndObjectColor(r, res, quadricColor, objectColor);
 
 	if (error_test == 1)
 	{
@@ -152,25 +223,8 @@ void main()
 		imageStore(frameData, coords, vec4(res.T/r.Tmax, 0, 0, 1));
 		return;
 	}
-	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(0, 0, 0, 1) + quadricColor); return;}
+	if (bool(res.flags & 1))		{imageStore(frameData, coords, vec4(quadricColor, 0)); return;}
 	if (bool(res.flags & 4))		{imageStore(frameData, coords, vec4(1, 0, 0, 1)); return;}
-	vec3 p = eye + r.V * res.T;
-
-	vec3 color;
-	if (quadricIntersected) 
-	{
-		const vec3 inFrontOfQuadric = vec3(255, 0, 0) / 255.0;
-		const vec3 insideQuadric = vec3(0, 255, 0) / 255.0;
-		const vec3 behindQuadric = vec3(0, 0, 255) / 255.0;
-
-		color = (res.T < minQuadricT) ? inFrontOfQuadric :
-				(res.T < maxQuadricT) ? insideQuadric    : behindQuadric;
-		imageStore(frameData, coords, vec4(color, 1));
-		return;
-	} 
-	else
-	{
-		color = lighting(p);
-	}
-	imageStore(frameData, coords, vec4(color, 1) + quadricColor);
+	
+	imageStore(frameData, coords, vec4(mix(objectColor, quadricColor, 0.5), 1));
 }

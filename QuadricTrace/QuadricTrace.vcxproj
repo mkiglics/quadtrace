@@ -161,7 +161,6 @@
     <None Include="Shaders\SphereTrace\relaxed_sphere_trace.glsl" />
     <None Include="Shaders\sdf_common.glsl" />
     <None Include="Shaders\SphereTrace\sphere_trace.glsl" />
-    <None Include="Shaders\tracing.glsl" />
     <None Include="Shaders\values.comp" />
     <None Include="Shaders\vert.vert" />
   </ItemGroup>

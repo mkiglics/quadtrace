@@ -99,35 +99,3 @@ void main()
 
 	imageStore(ecc, coords, vec4(k));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

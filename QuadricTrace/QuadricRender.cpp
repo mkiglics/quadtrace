@@ -37,8 +37,9 @@ void QuadricRender::Init(int gridSize = 16)
 
 	sam.AddResize([&](int _w, int _h) {
 		w = _w; h = _h;
-		*frameBuff = frameBuff->MakeResized(w, h); }
-	);
+		*frameBuff = frameBuff->MakeResized(w, h);
+		frameTexture = frameTexture.MakeResized(w, h);
+	});
 
 	GL_CHECK; //extra opengl error checking in GPU Debug build configuration
 
@@ -63,11 +64,9 @@ void QuadricRender::Preprocess()
 
 void QuadricRender::Render()
 {
-	int frameCount = 0;
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
 			cam.Update();
-
 
 #ifdef DEBUG
 			bool showQuadric = trace_method == Quadric;
@@ -94,10 +93,6 @@ void QuadricRender::Render()
 			frameCompProgram->Render();
 #endif
 			RenderUI();
-
-			if (++frameCount == 5) {
-				SaveImageZ(eccentricityTexture, "Eccentricity");
-			}
 		}
 	);
 }
@@ -200,7 +195,7 @@ bool QuadricRender::Link()
 	}
 	delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/tracing.glsl"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (hasError || program->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -210,7 +205,7 @@ bool QuadricRender::Link()
 	}
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
+	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
 	if (hasError || frameCompProgram->GetErrors().size() > 0)
 	{
 		hasError = true;
@@ -220,7 +215,7 @@ bool QuadricRender::Link()
 	}
 	delete eccComputeProgram;
 	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/tracing.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
+	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
 	if (hasError || eccComputeProgram->GetErrors().size() > 0) {
 		hasError = true;
 		if (eccComputeProgram->GetErrors().size() > 0)
@@ -287,6 +282,11 @@ void QuadricRender::RenderUI()
 		ImGui::DragInt("Showcase quadric X", &showcaseQuadricCoord.x, 0.1, -grid.x, grid.x);
 		ImGui::DragInt("Showcase quadric Y", &showcaseQuadricCoord.y, 0.1, -grid.y, grid.y);
 		ImGui::DragInt("Showcase quadric Z", &showcaseQuadricCoord.z, 0.1, -grid.z, grid.z);
+	}
+
+	if (ImGui::Button("Save eccentricity")) 
+	{
+		SaveImageZ(eccentricityTexture, "Eccentricity.txt");
 	}
 #endif
 

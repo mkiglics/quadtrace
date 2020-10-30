@@ -1,5 +1,15 @@
 #version 450
 
+// returns the quadric's parameter
+float getK(vec2 pos)
+{
+	// when x=0 getK would return inf or nan otherwise
+	float x = max(abs(pos.x), 0.0001);
+	return pos.y > 0 ?
+		   solveQuadratic(x * x,  2 * pos.y * pos.y - pos.y, -pos.y * pos.y).y :
+		   solveQuadratic(x * x, -2 * pos.y * pos.y - pos.y, -pos.y * pos.y).x;
+}
+
 // evaluating A(k), B(k) and C(k) functions
 vec3 getABC(float k)
 {
@@ -53,8 +63,8 @@ vec3 quadricGetNormal(vec3 point, float k) {
 
 	// from the implicit function's gradient
 	return normalize(vec3(
-		ABC.x * point.x,
-		ABC.x * point.y,
-		ABC.y * point.z + ABC.z / 2
+		2 * ABC.x * point.x,
+		2 * ABC.y * point.y + ABC.z,
+		2 * ABC.x * point.z
 	));
 }
