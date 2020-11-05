@@ -10,21 +10,6 @@ uniform sampler3D sdf_values;
 
 uniform int useConeTrace = 0;
 
-/*uniform int ray_count = 4; 
-const float TETRAHEDRON_TAN = 2*sqrt(2); 
-// tetrahedron 
-uniform vec3 ray_directions[]= { 
-	vec3(1, 1, -1) / sqrt(3), 
-	vec3(-1, -1, -1) / sqrt(3), 
-	vec3(1, -1, 1) / sqrt(3), 
-	vec3(-1, 1, 1) / sqrt(3) 
-}; 
-uniform float ray_half_angles_tan[] = { 
-	TETRAHEDRON_TAN, TETRAHEDRON_TAN, 
-	TETRAHEDRON_TAN, TETRAHEDRON_TAN 
-};*/
-
-
 // cube 
 uniform int ray_count = 6;
 uniform vec3 ray_directions[]= { 
@@ -40,57 +25,6 @@ uniform float ray_half_angles_tan[] = {
 	sqrt(2), sqrt(2), 
 	sqrt(2), sqrt(2) 
 };
- 
-// octahedron 
-/*uniform int ray_count = 8;
-uniform vec3 ray_directions[]= { 
-	vec3(1, 1, 1) / sqrt(3), 
-	vec3(-1, -1, -1) / sqrt(3), 
-	vec3(-1, 1, 1) / sqrt(3), 
-	vec3(1, -1, 1) / sqrt(3), 
-	vec3(1, 1, -1) / sqrt(3), 
-	vec3(-1, -1, 1) / sqrt(3), 
-	vec3(1, -1, -1) / sqrt(3), 
-	vec3(-1, 1, -1) / sqrt(3), 
-}; 
-uniform float ray_half_angles_tan[] = { 
-	2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 
-	2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2) 
-};*/
-
-/*
-#define PHI 1.61803398874989484820458683436 
-uniform int ray_count = 20;
-const float ICO_TAN = 4 / (3 + sqrt(5)); 
-uniform vec3 ray_directions[]= { 
-	vec3( (1 + PHI),  (1 + PHI),  (1 + PHI)), 
-	vec3(-(1 + PHI),  (1 + PHI),  (1 + PHI)), 
-	vec3( (1 + PHI), -(1 + PHI),  (1 + PHI)), 
-	vec3( (1 + PHI),  (1 + PHI), -(1 + PHI)), 
-	vec3(-(1 + PHI), -(1 + PHI),  (1 + PHI)), 
-	vec3( (1 + PHI), -(1 + PHI), -(1 + PHI)), 
-	vec3(-(1 + PHI),  (1 + PHI), -(1 + PHI)), 
-	vec3(-(1 + PHI), -(1 + PHI), -(1 + PHI)), 
-	vec3( PHI, 0, 1 +  2 * PHI), 
-	vec3(-PHI, 0, 1 +  2 * PHI), 
-	vec3( PHI, 0, 1 + -2 * PHI), 
-	vec3(-PHI, 0, 1 + -2 * PHI), 
-	vec3(0, -PHI, 1 + -2 * PHI), 
-	vec3(0,  PHI, 1 + -2 * PHI), 
-	vec3(0, -PHI, 1 +  2 * PHI), 
-	vec3(0,  PHI, 1 +  2 * PHI), 
-	vec3( PHI, 1 +  2 * PHI, 0), 
-	vec3(-PHI, 1 +  2 * PHI, 0), 
-	vec3( PHI, 1 + -2 * PHI, 0), 
-	vec3(-PHI, 1 + -2 * PHI, 0) 
-}; 
-uniform float ray_half_angles_tan[] = { 
-	ICO_TAN, ICO_TAN, ICO_TAN, ICO_TAN, 
-	ICO_TAN, ICO_TAN, ICO_TAN, ICO_TAN, 
-	ICO_TAN, ICO_TAN, ICO_TAN, ICO_TAN, 
-	ICO_TAN, ICO_TAN, ICO_TAN, ICO_TAN, 
-	ICO_TAN, ICO_TAN, ICO_TAN, ICO_TAN 
-};*/
 
 
 uniform int N = 70;

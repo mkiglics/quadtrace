@@ -9,7 +9,6 @@ QuadricRender::~QuadricRender()
 
 void QuadricRender::Init(int gridSize = 16)
 {
-	//SaveImageZ(eccentricityTexture, "asd");
 	grid = glm::ivec3(gridSize);
 
 	csg_tree = model4_expr();
@@ -43,10 +42,8 @@ void QuadricRender::Init(int gridSize = 16)
 
 	GL_CHECK; //extra opengl error checking in GPU Debug build configuration
 
-	if (!Link())
-	{
-		std::cout << "Error with linking " << errorMsg << std::endl;
-	}
+	Compile();
+	Preprocess();
 }
 
 void QuadricRender::Preprocess()
@@ -69,7 +66,7 @@ void QuadricRender::Render()
 			cam.Update();
 
 #ifdef DEBUG
-			bool showQuadric = trace_method == Quadric;
+			bool showQuadric = trace_method == TraceTypes::quadric;
 #else
 			bool showQuadric = false;
 #endif
@@ -87,11 +84,7 @@ void QuadricRender::Render()
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
 
 			GL_CHECK;
-#ifdef DEBUG
-			program->Render(); //only the UI!!
-			eccComputeProgram->Render(); sdfComputeProgram->Render();
-			frameCompProgram->Render();
-#endif
+
 			RenderUI();
 		}
 	);
@@ -103,7 +96,9 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 	csg_tree = arg.model;
 	trace_method = arg.method;
 	build_kernel("Shaders/sdf.tmp", csg_tree);
-	LoadSDF("Shaders/sdf.tmp"); Link();
+	LoadSDF("Shaders/sdf.tmp"); 
+	Compile();
+	Preprocess();
 	
 	std::vector<float> data(w * h);
 	int fr = 0;
@@ -115,8 +110,8 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "render_quadric" << (int)(arg.method == SphereTrace::Quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
-				<< "trace_method" << (int) (arg.method) << "showQuadric" << 0;
+				<< "render_quadric" << (int)(arg.method == TraceTypes::quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
+				<< "trace_method" << arg.method.id << "showQuadric" << 0;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -142,7 +137,10 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 	quadricArgs = arg.q_arg;
 	trace_method = arg.method;
 	build_kernel("Shaders/sdf.tmp", csg_tree);
-	LoadSDF("Shaders/sdf.tmp"); Link();
+	LoadSDF("Shaders/sdf.tmp"); 
+	Compile();
+	Preprocess();
+
 	long frame = -10;
 	std::chrono::duration<double> elapsed;
 	
@@ -180,9 +178,58 @@ void QuadricRender::SetView(glm::vec3 eye, glm::vec3 at, glm::vec3 up)
 	cam.SetView(eye, at, up);
 }
 
-bool QuadricRender::Link()
+
+/* Writes the given values in the map to a glsl file as define directives, the key of the map being
+the identifier and the value being the token-string.
+*/
+void writeDefines(std::map<std::string, std::string> defines, std::string path = "Shaders/defines.glsl");
 {
-	hasError = false;
+	std::ofstream out(path);
+	if (!out.is_open())
+	{
+		std::cout << "Could not open defines file!" << std::endl;
+	}
+	for (auto const& define: defines) 
+	{
+		out << "#define " << define.first << " " << define.second << "\n";
+	}
+
+	out.close();
+}
+
+/* Called before the compile step
+*/
+void QuadricRender::CompilePreprocess()
+{
+	std::map<std::string, std::string> defines {
+		// cone trace
+		{"RAY_DIRECTIONS", std::string("gRay") + std::to_string(coneTraceDesc.rayCount) + "Directions"},
+		{"RAY_HALF_TANGENTS", std::string("gRay") + std::to_string(coneTraceDesc.rayCount) + "HalfTangents"},
+
+		// sampling method
+		{"UNBOUND_QUADRIC", useConeTrace ? "unboundQuadricConeTrace" : "unboundQuadricBruteForce"},
+
+		// which tracing to use
+		//{"TRACE", ""}
+	};
+	writeDefines(defines);
+}
+
+bool QuadricRender::Compile()
+{
+	// TODO include order:
+	// defines.glsl
+	// {
+	//		SDFprimitives.glsl
+	//		SDF.glsl
+	//		SDFcommon.glsl
+	//		...tracing...
+	// }
+	// interface.glsl
+	// .. tracing...
+	// main
+	CompilePreprocess();
+
 	//build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfComputeProgram;
 	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
@@ -190,41 +237,36 @@ bool QuadricRender::Link()
 					   << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
 	if (sdfComputeProgram->GetErrors().size() > 0)
 	{
-		hasError = true;
-		errorMsg = sdfComputeProgram->GetErrors();
-	}
-	delete program;
-	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
-	if (hasError || program->GetErrors().size() > 0)
-	{
-		hasError = true;
-		if (program->GetErrors().size() > 0)
-			errorMsg = program->GetErrors();
-		return false;
-	}
-	delete frameCompProgram;
-	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
-	if (hasError || frameCompProgram->GetErrors().size() > 0)
-	{
-		hasError = true;
-		if (frameCompProgram->GetErrors().size() > 0)
-			errorMsg = frameCompProgram->GetErrors();
-		return false;
-	}
-	delete eccComputeProgram;
-	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
-	if (hasError || eccComputeProgram->GetErrors().size() > 0) {
-		hasError = true;
-		if (eccComputeProgram->GetErrors().size() > 0)
-			errorMsg = eccComputeProgram->GetErrors();
+		std::cout << sdfComputeProgram->GetErrors() << std::endl;
 		return false;
 	}
 
-	Preprocess();
-	hasError = false;
+	delete program;
+	program = new df::ShaderProgramEditorVF("Shader Editor");
+	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
+	if (program->GetErrors().size() > 0)
+	{
+		std::cout << program->GetErrors() << std::endl;
+		return false;
+	}
+
+	delete frameCompProgram;
+	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
+	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp /*<< trace_path[(int)trace_method]*/ << df::LinkProgram;
+	if (frameCompProgram->GetErrors().size() > 0)
+	{
+		std::cout << frameCompProgram->GetErrors() << std::endl;
+		return false;
+	}
+
+	delete eccComputeProgram;
+	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
+	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
+	if (eccComputeProgram->GetErrors().size() > 0) {
+		std::cout << eccComputeProgram->GetErrors() << std::endl;
+		return false;
+	}
+
 	return true;
 }
 
@@ -234,11 +276,12 @@ void QuadricRender::RenderUI()
 	float windowWidth = ImGui::GetContentRegionAvailWidth();
 	ImGui::Begin("SDF editor");
 	ImGui::Text("SDF Editor");
-	ImGui::InputTextMultiline("", &text[0], bufferSize, { windowWidth, 300 });
 	if (ImGui::Button("Compile", { windowWidth, 30 }))
 	{
-		if (SaveSDF())
-			Link();
+		if (SaveSDF()) {
+			Compile();
+			Preprocess();
+		}
 	}
 	for (int i = 0; i < examples.size(); i++)
 	{
@@ -260,19 +303,28 @@ void QuadricRender::RenderUI()
 	}
 	ImGui::NewLine();
 #ifdef DEBUG
-	static int renderType = (int)SphereTrace::Quadric;
-	ImGui::RadioButton("Simple", &renderType, (int) SphereTrace::Simple); ImGui::SameLine();
-	ImGui::RadioButton("Relaxed", &renderType, (int)SphereTrace::Relaxed); ImGui::SameLine();
-	ImGui::RadioButton("Enhanced", &renderType, (int)SphereTrace::Enhanced); ImGui::SameLine();
-	ImGui::RadioButton("Quadric", &renderType, (int)SphereTrace::Quadric);
+	static int renderType = TraceTypes::quadric.id;
+	ImGui::RadioButton("Simple", &renderType, TraceTypes::sphere.id); ImGui::SameLine();
+	ImGui::RadioButton("Relaxed", &renderType, TraceTypes::relaxed.id); ImGui::SameLine();
+	ImGui::RadioButton("Enhanced", &renderType, TraceTypes::enhanced.id); ImGui::SameLine();
+	ImGui::RadioButton("Quadric", &renderType, TraceTypes::quadric.id);
 
-	if ((int)trace_method != renderType) 
+	
+	static int coneTrace = ConeTraceTypes::cube.id;
+	ImGui::RadioButton("Tetrahedron", &renderType, ConeTraceTypes::tetrahedron.id); ImGui::SameLine();
+	ImGui::RadioButton("Cube", &renderType, ConeTraceTypes::cube.id); ImGui::SameLine();
+	ImGui::RadioButton("Octahedron", &renderType, ConeTraceTypes::octahedron.id); ImGui::SameLine();
+	ImGui::RadioButton("Icosahedron", &renderType, ConeTraceTypes::icosahedron.id);
+
+	if (trace_method.id != renderType || coneTraceDesc.id != coneTrace) 
 	{
-		trace_method = (SphereTrace)renderType;
-		Link();
+		trace_method = TraceTypes::traceTypes[renderType];
+		coneTraceDesc = ConeTraceTypes::coneTraceTypes[coneTrace];
+		Compile();
+		Preprocess();
 	}
 
-	if (trace_method == Quadric) 
+	if (trace_method == TraceTypes::quadric) 
 	{
 		if (ImGui::Checkbox("Use cone trace", &useConeTrace)) 
 		{
@@ -289,11 +341,6 @@ void QuadricRender::RenderUI()
 		SaveImageZ(eccentricityTexture, "Eccentricity.txt");
 	}
 #endif
-
-	if (hasError) 
-	{
-		ImGui::TextColored({ 255, 0, 0, 255 }, errorMsg.c_str());
-	}
 	ImGui::End();
 
 	/*ImGui::Begin("CSG Editor");
@@ -306,15 +353,12 @@ bool QuadricRender::LoadSDF(const char* name)
 	std::ifstream in(name);
 	if (!in.is_open())
 	{
-		hasError = true;
-		errorMsg = "Cannot open " + std::string(name);
+		std::cout << "Cannot open " + std::string(name) << std::endl;
 		return false;
 	}
 	std::string contents((std::istreambuf_iterator<char>(in)),
 		std::istreambuf_iterator<char>());
-	text = std::vector<char>(contents.begin(), contents.end());
-	text.resize(bufferSize);
-	hasError = false;
+
 	return true;
 }
 
@@ -323,12 +367,10 @@ bool QuadricRender::SaveSDF()
 	std::ofstream out("Shaders/sdf.tmp");
 	if (!out.is_open())
 	{
-		hasError = true;
-		errorMsg = "Cannot open Shaders/sdf.tmp";
+		std::cout << "Cannot open Shaders/sdf.tmp" << std::endl;
 		return false;
 	}
-	out << text.data();
 	out.close();
-	hasError = false;
+
 	return true;
 }

@@ -7,12 +7,13 @@
 #include <fstream>
 #include "CodeGen/ui.h"
 #include "CodeGen/Objects/models.h"
+#include "configurables.h"
 
 #define DEBUG
 
-class QuadricRender {
-public:
-	enum SphereTrace {Simple, Relaxed, Enhanced, Quadric};
+class QuadricRender 
+{
+public:	
 	struct QuadricArg {
 		float delta = 0.008;
 		int ray_count = 70;
@@ -23,10 +24,10 @@ public:
 		long max_frames;
 		int max_steps;
 		QuadricArg q_arg;
-		SphereTrace method = Quadric;
+		TraceTypes::TraceType method;
 	};
 
-	QuadricRender() :text({ ' ' }) {}
+	QuadricRender() {}
 	~QuadricRender();
 	void Init(int);
 	void Render();
@@ -36,20 +37,26 @@ public:
 	double RunSpeedTest(TestArg arg);
 
 private:
+
 	void Preprocess();
 	void RenderUI();
-	bool Link();
+
+	void CompilePreprocess();
+	bool Compile();
+	
 	bool LoadSDF(const char*);
 	bool SaveSDF();
 
+	// cone tracing
 	bool useConeTrace = false;
+	ConeTraceTypes::ConeTraceType coneTraceDesc = ConeTraceTypes::cube;
+
+	// debugging quadric
 	glm::ivec3 showcaseQuadricCoord = glm::ivec3(0);
 
-	bool hasError = false;
-	std::string errorMsg = "";
 	glm::ivec3 grid;
-	std::vector<char> text;
-	SphereTrace trace_method = Quadric;
+	// a variable that is used all over the place to store text
+	TraceTypes::TraceType trace_method = TraceTypes::quadric;
 	QuadricArg quadricArgs;
 
 	df::Texture3D<float> sdfTexture;
@@ -66,7 +73,6 @@ private:
 	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, df::Sample::FLAGS::DEFAULT | df::Sample::FLAGS::RENDERDOC); //handles Events and such
 	df::Camera cam;
 
-	const int bufferSize = 8192;
 	int w, h;
 	const std::vector<std::pair<std::string, MyExpr*>> examples = {
 		{"4-way pipe", model1_expr() },
@@ -90,15 +96,27 @@ private:
 	MyExpr *csg_tree;
 };
 
+template<typename T>
+struct ASD {
+	using value_type = T;
+	constexpr int size = 1;
+};
+template<int I, typename T, glm::qualifier Q>
+struct ASD<glm::vec<I, T, Q>>{
+	using value_type = T;
+	constexpr int size = I;
+};
+
 template<typename InternalFormat_>
-void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string& path)
+void SaveImageZ(const df::Texture3D<InternalFormat_>& texture_, const std::string& path_)
 {
-	/*int bufSizePerLevel = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
+	int buffSize = texture.getWidth() * texture.getHeight() * texture.getDepth();
 	constexpr GLenum internalFormat = df::detail::getInternalChannel<InternalFormat_>();
 	constexpr GLenum baseType = df::detail::getInternalBaseType<InternalFormat_>();
 
-	std::vector<df::detail::getBaseType<InternalFormat_>::Type> data(bufSizePerLevel);
-	glGetTextureImage((GLuint)texture, 0, internalFormat, baseType, sizeof(InternalFormat_) * bufSizePerLevel, &data[0]);
+
+	std::vector<char> data(buffSize*sizeof(InternalFormat_));
+	glGetTextureImage((GLuint)texture, 0, internalFormat, baseType, sizeof(InternalFormat_) * buffSize, &data[0]);
 
 	std::ofstream myfile;
 	myfile.open(path);
@@ -125,5 +143,5 @@ void SaveImageZ(const df::Texture3D<InternalFormat_>& texture, const std::string
 	}
 	//SDL_FreeSurface(surf);
 
-	myfile.close();*/
+	myfile.close();
 }

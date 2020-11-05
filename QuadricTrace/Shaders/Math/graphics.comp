@@ -1,0 +1,81 @@
+//?#version 450
+//?#include "common.glsl"
+
+// Must be in compute shader
+
+const float pi = 3.1415926535897932384626433832795;
+
+
+// todo later: Camera UBO
+uniform vec3  uCameraEye;
+uniform vec3  uCameraCenter;
+uniform vec3  uCameraUp = vec3(0,1,0);
+uniform float uCameraTanFow = 1;
+uniform vec2  uCameraDrawRange = vec2(0.1, 100);
+
+RayCone Camera(in ivec2 pixel, in ivec2 resolution)
+{
+	vec3 w = normalize(uCameraCenter-uCameraEye);
+    vec3 u = normalize(cross(w,uCameraUp));
+	vec3 v = cross(u,w);
+    
+    const vec2 res = vec2(resolution);
+    float len = length(resolution);
+    float tana = uCameraTanFow / len; // pixel cone half opening angle
+    vec2 px = (vec2(pixel)/res*2.-1.) * res * tana; //pixel on canvas
+    
+    return RayCone(
+        Ray(uCameraEye, uCameraDrawRange.x, normalize(w+px.x*u+px.y*v), uCameraDrawRange.y),
+        tana,0);
+}
+
+struct Material
+{
+    vec3 color;         // [0,1/pi]
+    float roughness;    // [0,7]
+    float ior;          // index of reflection [1,2]
+    float metalness;    // 0.02-0.05 for non-metals, 0.6-0.9 for metals
+};
+
+vec3 radiance(vec3 n, vec3 l, vec3 v, in Material mat)
+{
+    vec3 F0 = mat.color*mat.metalness;
+    vec3  h = normalize(l + v);
+
+    //CookTorrenceGeometry
+    float hn = max(dot(h, n), 0.0), vn = max(dot(v, n), 0.0);
+	float ln = max(dot(l, n), 0.0), vh = max(dot(v, h), 0.0);
+    float G = min( 2.*hn*min( vn, ln)/vh, 1.0 );
+
+    //GGXDistribution
+    float hn2 = hn*hn, m2= mat.roughness*mat.roughness;
+    float tmp = hn2*(m2-1.)+1.;
+    float D =  m2/(pi*tmp*tmp);
+
+    //SclickFresnel
+    vec3 F = F0 - (1.-F0)*pow(1.-hn,5.);
+	vec3 specular  = F * D * G / (4. * vn * ln);
+	
+	// Lambertian BRDF
+	vec3 diffuse = (1.-mat.metalness) * mat.color * (1. - F);
+    
+	// Punctual Light Source
+	return (specular + diffuse) * ln;
+}
+
+
+uniform vec3 uLightPos = vec3(10);
+uniform vec3 uLightColor = vec3(10);
+
+struct PointLight{
+    vec3 pos;
+    vec3 col;
+};
+
+vec3 shadePointLight(vec3 p, vec3 n, Material mat, PointLight light)
+{
+    vec3 l = light.pos-p;
+    float invlen = 1./length(l);
+    l *= invlen;
+    return radiance(n, l, normalize(uCameraEye-p), mat)*uLightColor*(invlen*invlen);
+}

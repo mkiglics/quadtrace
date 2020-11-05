@@ -1,0 +1,25 @@
+//?#version 450
+//?#include "../Math/graphics.comp"
+//?#include "../SDF/SDFcommon.glsl"
+//?#include "../Tracing/enhanced_sphere_trace.glsl"
+
+
+restrict readonly uniform image2D inDistance;
+restrict writeonly uniform image2D outColor;
+
+void main()
+{
+	ivec2 pixel = gl_GlobalInvocationID.xy;
+	ivec2 resolution = gl_NumWorkGroups.xy*gl_WorkGroupSize.xy;
+	RayCone raycone = Camera(pixel, resolution);
+	ray.dist = imageLoad(inDistance,pixel).r;
+	ConeTraceResult result = enhancedConeTrace(raycone, SphereTraceDesc(0.001, 64)));
+	
+	vec3 norm = computeGradient2(result.p);
+	vec3 col = shadePointLight(result.p, norm,
+						Material(vec3(0.5,0.5,0.3), 0.1, 1.5, 0.7),
+						PointLight(vec3(10), vec3(20))
+					);
+
+	imageStore(outColor, pixel, vec4(col,0));
+}

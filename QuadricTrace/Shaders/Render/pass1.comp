@@ -1,0 +1,10 @@
+#version 450
+
+
+restrict readonly uniform image3D inField;
+restrict writeonly uniform image2D outDistance;
+
+void main()
+{
+	
+}
