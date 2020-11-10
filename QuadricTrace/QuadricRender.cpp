@@ -4,7 +4,7 @@ QuadricRender::~QuadricRender()
 {
 	delete program;
 	delete eccComputeProgram;
-	delete sdfComputeProgram;
+	delete sdfGradientComputeProgram;
 }
 
 void QuadricRender::Init(int gridSize = 16)
@@ -46,21 +46,63 @@ void QuadricRender::Init(int gridSize = 16)
 	Preprocess();
 }
 
+
+void SaveImageZ(const df::Texture3D<glm::vec4>& texture, const std::string& path)
+{
+	int buffSize = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
+
+
+	std::vector<float> data(buffSize);
+	glGetTextureImage((GLuint)texture, 0, GL_RGBA32F, GL_FLOAT, sizeof(glm::vec4) * buffSize, &data[0]);
+
+	std::ofstream myfile;
+	myfile.open(path);
+
+	//SDL_Surface* surf = SDL_CreateRGBSurface(0, width, height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	myfile << texture.getWidth() << " " << texture.getHeight() << " " << texture.getDepth() << "\n";
+	for (int i = 0; i < texture.getWidth(); i++)
+	{
+		for (int k = 0; k < texture.getHeight(); k++)
+		{
+			for (int j = 0; j < texture.getDepth(); j++)
+			{
+				for (int l = 0; l < texture.getLevels(); l++)
+				{
+					myfile << data[i * texture.getHeight() * texture.getDepth() * texture.getLevels() +
+						k * texture.getDepth() * texture.getLevels() +
+						j * texture.getLevels() +
+						l] << " ";
+				}
+				myfile << "\n";
+			}
+		}
+	}
+	//SDL_FreeSurface(surf);
+
+	myfile.close();
+}
+
+
 void QuadricRender::Preprocess()
 {
-	*sdfComputeProgram << "a" << 0;
-	glBindImageTexture(0, (GLuint)sdfTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-	glDispatchCompute(grid.x, grid.y, grid.z);
-	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-
-	glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	*eccComputeProgram << "sdf_values" << sdfTexture << "N" << quadricArgs.ray_count << "M" << quadricArgs.ray_count << "correction" << quadricArgs.correction << "useConeTrace" << (int)useConeTrace;
+	// glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	*sdfGradientComputeProgram << "outField" << eccentricityTexture;
 	glDispatchCompute(grid.x - 1, grid.y - 1, grid.z - 1);
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+	// nem tudom ez jo e most de valszeg nem
+	SaveImageZ(eccentricityTexture, "sdfgrad.txt");
+
+	/*glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	*eccComputeProgram << "sdf_values" << sdfTexture << "N" << quadricArgs.ray_count << "M" << quadricArgs.ray_count << "correction" << quadricArgs.correction << "useConeTrace" << (int)useConeTrace;
+	glDispatchCompute(grid.x - 1, grid.y - 1, grid.z - 1);
+	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);*/
 }
 
 void QuadricRender::Render()
 {
+	return;
+
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
 			cam.Update();
@@ -182,7 +224,7 @@ void QuadricRender::SetView(glm::vec3 eye, glm::vec3 at, glm::vec3 up)
 /* Writes the given values in the map to a glsl file as define directives, the key of the map being
 the identifier and the value being the token-string.
 */
-void writeDefines(std::map<std::string, std::string> defines, std::string path = "Shaders/defines.glsl");
+void writeDefines(std::map<std::string, std::string> defines, std::string path = "Shaders/defines.glsl")
 {
 	std::ofstream out(path);
 	if (!out.is_open())
@@ -218,30 +260,37 @@ void QuadricRender::CompilePreprocess()
 bool QuadricRender::Compile()
 {
 	// TODO include order:
+	// constants.glsl
 	// defines.glsl
+	// Math/quadric.glsl
+	// Math/common.glsl
 	// {
-	//		SDFprimitives.glsl
+	//		SDF/SDFprimitives.glsl
 	//		SDF.glsl
-	//		SDFcommon.glsl
+	//		SDF/SDFcommon.glsl
 	//		...tracing...
 	// }
-	// interface.glsl
+	// Math/interface.glsl
 	// .. tracing...
 	// main
 	CompilePreprocess();
+	std::cout << " " << std::endl;
 
 	//build_footmap("Shaders/sdf", csg_tree); // generates the function
-	delete sdfComputeProgram;
-	sdfComputeProgram = new df::ComputeProgramEditor("SDF Computer");
-	*sdfComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp 
-					   << "Shaders/sdf.tmp"_comp << "Shaders/sdf_precompute.glsl"_comp << df::LinkProgram;
-	if (sdfComputeProgram->GetErrors().size() > 0)
+	delete sdfGradientComputeProgram;
+	sdfGradientComputeProgram = new df::ComputeProgramEditor("SDF/Gradient Computer");
+	*sdfGradientComputeProgram
+		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
+		<< "Shaders/Tracing/enhanced_sphere_trace.glsl"_comp << "Shaders/Tracing/cone_trace.glsl"_comp
+		<< "Shaders/Preprocess/step1.glsl"_comp << df::LinkProgram;
+	if (sdfGradientComputeProgram->GetErrors().size() > 0)
 	{
-		std::cout << sdfComputeProgram->GetErrors() << std::endl;
+		std::cout << sdfGradientComputeProgram->GetErrors() << std::endl;
 		return false;
 	}
 
-	delete program;
+	/*delete program;
 	program = new df::ShaderProgramEditorVF("Shader Editor");
 	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
 	if (program->GetErrors().size() > 0)
@@ -252,7 +301,7 @@ bool QuadricRender::Compile()
 
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp /*<< trace_path[(int)trace_method]*/ << df::LinkProgram;
+	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
 	if (frameCompProgram->GetErrors().size() > 0)
 	{
 		std::cout << frameCompProgram->GetErrors() << std::endl;
@@ -265,7 +314,7 @@ bool QuadricRender::Compile()
 	if (eccComputeProgram->GetErrors().size() > 0) {
 		std::cout << eccComputeProgram->GetErrors() << std::endl;
 		return false;
-	}
+	}*/
 
 	return true;
 }

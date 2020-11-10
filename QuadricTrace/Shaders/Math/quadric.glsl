@@ -1,7 +1,7 @@
 //?#version 450
 //?#include "common.glsl"
 
-#define SGN(a) (a < 0 ? -1 : 1)
+#define SGN(a) ((a) < 0 ? -1 : 1)
 
 /* Numerically stable quadratic equation solver */
 vec2 solveQuadratic(float a, float b, float c)

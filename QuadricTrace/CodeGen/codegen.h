@@ -20,18 +20,18 @@ struct CodeGen {
     } state;
 
     Carrier operator()(Box<Fields> expr) {
-        return Var("float","box(" + move_rotate() + ", " + float3(expr.x, expr.y, expr.z) + ")");
+        return Var("float","sdfBox(" + move_rotate() + ", " + float3(expr.x, expr.y, expr.z) + ")");
     }
     Carrier operator()(Sphere<Fields> expr) {
-        return Var("float","sphere(" + move_rotate() + ", " + float1(expr.r) + ")");
+        return Var("float","sdfSphere(" + move_rotate() + ", " + float1(expr.r) + ")");
     }
     Carrier operator()(Cylinder<Fields> expr) {
         using namespace std::string_literals;
-        return Var("float","cylinder"s + (char)expr.dir + "(" + move_rotate() + ", " +
+        return Var("float","sdfCylinder"s + (char)expr.dir + "(" + move_rotate() + ", " +
             (expr.y == std::numeric_limits<float>::infinity() ? float1(expr.x) : float2(expr.x, expr.y)) + ")");
     }
     Carrier operator()(PlaneXZ<Fields> expr) {
-        return Var("float","planeXZ(" + move_rotate() + ")");
+        return Var("float","sdfPlaneXZ(" + move_rotate() + ")");
     }
     Carrier operator()(Offset<Fields> expr) {
         auto sub_expr = visit(*this, *expr.a);

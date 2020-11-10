@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 namespace TraceTypes {
 	// What kind of tracing we would like to use to render the frame
 	struct TraceType
@@ -11,14 +14,9 @@ namespace TraceTypes {
 	inline const TraceType relaxed = {1, "relaxedSphereTracing"};
 	inline const TraceType enhanced = {2, "enhancedSphereTrace"};
 	inline const TraceType quadric = {3, "quadricTrace"};	
-	inline const std::vector<const TraceType> traceTypes {
+	inline const std::vector<TraceType> traceTypes {
 		TraceTypes::sphere, TraceTypes::relaxed, TraceTypes::enhanced, TraceTypes::quadric 
 	};
-
-	bool operator==(const TraceType& t1, const TraceType& t2) 
-	{
-		return t1.id == t2.id;
-	}
 }
 
 namespace ConeTraceTypes {
@@ -32,12 +30,10 @@ namespace ConeTraceTypes {
 	inline const ConeTraceType cube = {1, 6};
 	inline const ConeTraceType octahedron = {2, 8};
 	inline const ConeTraceType icosahedron = {3, 20};
-	inline const std::vector<const ConeTraceType> coneTraceTypes { 
+	inline const std::vector<ConeTraceType> coneTraceTypes { 
 		ConeTraceTypes::tetrahedron, ConeTraceTypes::cube, ConeTraceTypes::octahedron, ConeTraceTypes::icosahedron 
 	};
-
-	bool operator==(const ConeTraceType& t1, const ConeTraceType& t2) 
-	{
-		return t1.id == t2.id;
-	}
 }
+
+bool operator==(const TraceTypes::TraceType& t1, const  TraceTypes::TraceType& t2);
+bool operator==(const ConeTraceTypes::ConeTraceType& t1, const ConeTraceTypes::ConeTraceType& t2);

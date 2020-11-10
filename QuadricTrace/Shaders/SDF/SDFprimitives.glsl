@@ -1,3 +1,4 @@
+//?#version 450
     
 float sdfSphere(vec3 p, vec3 c, float r) {
 	return length(p - c) - r;
@@ -75,4 +76,4 @@ float sdfIntersect(float d1, float d2)
 	return max(d1,d2);
 }
 
-float SDF(vec3 p); //fwd
+float SDF(vec3 p);

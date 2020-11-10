@@ -10,11 +10,11 @@ restrict writeonly uniform image2D outColor;
 void main()
 {
 	ivec2 pixel = gl_GlobalInvocationID.xy;
-	ivec2 resolution = gl_NumWorkGroups.xy*gl_WorkGroupSize.xy;
+	ivec2 resolution = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
 	RayCone raycone = Camera(pixel, resolution);
 	ray.dist = imageLoad(inDistance,pixel).r;
 	ConeTraceResult result = enhancedConeTrace(raycone, SphereTraceDesc(0.001, 64)));
-	
+
 	vec3 norm = computeGradient2(result.p);
 	vec3 col = shadePointLight(result.p, norm,
 						Material(vec3(0.5,0.5,0.3), 0.1, 1.5, 0.7),

@@ -4,13 +4,13 @@ uniform sampler3D samplerValues;
 //restrict writeonly uniform image3D in_quadric_field;
 //restrict readonly uniform image3D out_quadric_field;
 
-uniform vec3 uAabbCorner;
-uniform vec3 uAabbSize;
+uniform vec3 uAabbCorner = vec3(-1, -1, -1);
+uniform vec3 uAabbSize = vec3(1, 1, 1);
 
 //converts texel coordinates (int in range [0, n-1]) to global floats
 vec3 voxelToGlobal(ivec3 p, ivec3 grid_size)
 {
-	return vec3(p)/vec3(grid_size)*uAabbSize + uAabbCorner;
+	return vec3(p)/vec3(grid_size) * uAabbSize + uAabbCorner;
 	//return p - (grid_size - vec3(1.0)) / 2.0;
 }
 
@@ -47,7 +47,7 @@ QuadricField loadQuadricField(layout(rgba32f) image3D in_field, vec3 world_pos)
 	return decodeQuadricField(imageLoad(in_field, coords));
 }
 
-void storeQuadricField(image3D out_field, ivec3 coords, QuadricField field)
+void storeQuadricField(restrict writeonly image3D out_field, ivec3 coords, QuadricField field)
 {
 	imageStore(out_field, coords, encodeQuadricField(field));
 }

@@ -1,4 +1,6 @@
 //?#version 450
+
+//?#include "../SDF/SDFcommon.glsl"
 //?#include "common.glsl"
 
 // Must be in compute shader

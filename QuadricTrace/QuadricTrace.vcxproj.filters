@@ -37,6 +37,7 @@
     <ClCompile Include="CodeGen\Objects\model8.cpp" />
     <ClCompile Include="CodeGen\Objects\model9.cpp" />
     <ClCompile Include="CodeGen\Objects\model10.cpp" />
+    <ClCompile Include="configurables.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\vert.vert">
@@ -125,6 +126,7 @@
     </ClInclude>
     <ClInclude Include="CodeGen\Objects\models.h" />
     <ClInclude Include="CodeGen\Footmap.h" />
+    <ClInclude Include="configurables.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="test.txt" />

@@ -67,7 +67,7 @@ private:
 
 	df::ShaderProgramEditorVF* program;
 	df::ComputeProgramEditor* frameCompProgram;
-	df::ComputeProgramEditor* sdfComputeProgram;
+	df::ComputeProgramEditor* sdfGradientComputeProgram;
 	df::ComputeProgramEditor* eccComputeProgram;
 
 	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, df::Sample::FLAGS::DEFAULT | df::Sample::FLAGS::RENDERDOC); //handles Events and such
@@ -99,49 +99,10 @@ private:
 template<typename T>
 struct ASD {
 	using value_type = T;
-	constexpr int size = 1;
+	int size = 1;
 };
 template<int I, typename T, glm::qualifier Q>
 struct ASD<glm::vec<I, T, Q>>{
 	using value_type = T;
-	constexpr int size = I;
+	int size = I;
 };
-
-template<typename InternalFormat_>
-void SaveImageZ(const df::Texture3D<InternalFormat_>& texture_, const std::string& path_)
-{
-	int buffSize = texture.getWidth() * texture.getHeight() * texture.getDepth();
-	constexpr GLenum internalFormat = df::detail::getInternalChannel<InternalFormat_>();
-	constexpr GLenum baseType = df::detail::getInternalBaseType<InternalFormat_>();
-
-
-	std::vector<char> data(buffSize*sizeof(InternalFormat_));
-	glGetTextureImage((GLuint)texture, 0, internalFormat, baseType, sizeof(InternalFormat_) * buffSize, &data[0]);
-
-	std::ofstream myfile;
-	myfile.open(path);
-
-	//SDL_Surface* surf = SDL_CreateRGBSurface(0, width, height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	std::vector< df::detail::getBaseType<InternalFormat_>::Type> imageData;
-	myfile << texture.getWidth() << " " << texture.getHeight() << " " << texture.getDepth() << "\n";
-	for (int i = 0; i < texture.getWidth(); i++) 
-	{
-		for (int k = 0; k < texture.getHeight(); k++) 
-		{
-			for (int j = 0; j < texture.getDepth(); j++) 
-			{
-				for (int l = 0; l < texture.getLevels(); l++) 
-				{
-					myfile << data[i * texture.getHeight() * texture.getDepth() * texture.getLevels() +
-						k * texture.getDepth() * texture.getLevels() +
-						j * texture.getLevels() +
-						l] << " ";
-				}
-				myfile << "\n";
-			}
-		}
-	}
-	//SDL_FreeSurface(surf);
-
-	myfile.close();
-}

@@ -1,3 +1,5 @@
+#version 450
+
 #define PHI 1.61803398874989484820458683436 
 
 #ifndef RAY_DIRECTIONS
@@ -44,7 +46,7 @@ const vec3 gRay8Directions[]= {
 	vec3(1, 1, -1) / sqrt(3), 
 	vec3(-1, -1, 1) / sqrt(3), 
 	vec3(1, -1, -1) / sqrt(3), 
-	vec3(-1, 1, -1) / sqrt(3), 
+	vec3(-1, 1, -1) / sqrt(3)
 }; 
 const float gRay8HalfTangents[] = { 
 	2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 2 / sqrt(2), 

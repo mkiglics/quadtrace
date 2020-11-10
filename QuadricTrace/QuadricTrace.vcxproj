@@ -140,6 +140,7 @@
     <ClCompile Include="CodeGen\Objects\model9.cpp" />
     <ClCompile Include="CodeGen\Objects\ObjectsUtil.cpp" />
     <ClCompile Include="CodeGen\util.cpp" />
+    <ClCompile Include="configurables.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
@@ -185,6 +186,7 @@
     <ClInclude Include="CodeGen\Objects\models.h" />
     <ClInclude Include="CodeGen\ui.h" />
     <ClInclude Include="CodeGen\util.h" />
+    <ClInclude Include="configurables.h" />
     <ClInclude Include="QuadricRender.h" />
   </ItemGroup>
   <ItemGroup>

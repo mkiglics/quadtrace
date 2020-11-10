@@ -2,9 +2,10 @@
 
 //?#include "../SDF/SDFprimitives.glsl"
 //?#include "../SDF/SDFcommon.glsl"
+//?#include "../Math/common.glsl"
 
 // TODO move this function when I decide whether using it or not is necessary
-mat3 getOrthonormalBasis(in vec3 v) 
+/*mat3 getOrthonormalBasis(in vec3 v) 
 {
     // frisvad method
 	mat3 basis;
@@ -25,27 +26,29 @@ mat3 getOrthonormalBasis(in vec3 v)
     }
     
     return basis;
-}
+}*/
 
-ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim) 
+ConeTraceResult cone_trace(in ConeTraceDesc desc) 
 {
-	ConeTraceResult ret = ConeTraceResult(ray.Tmin, vec3(0.0f), 0);
+	RayCone rayCone = desc.ray;
+	ConeTraceResult ret = ConeTraceResult(vec3(0.0f), 0);
 
 	// current distance to the object
     float d, coneSurfaceD;
-	float lipschitz = 1 + abs(desc.tanHalfAngle);
+	float lipschitz = 1 + abs(desc.ray.tana);
     
     int i = 0; 
 	
 	float highestSmallerThan0 = -999;
 	float highestSmallerThan0T = 0.0f;
+	float T = 0.0f;
 
 	do
     {
 		// d = texelFetch(sdf_values, globalToTexel(ray.P + ret.T * ray.V, dim), 0).r;
-		d = SDF(ray.P + ret.T * ray.V);
+		d = SDF(rayCone.ray.P + T * rayCone.ray.V);
 
-        coneSurfaceD = (d - desc.startingRadius - ret.T * desc.tanHalfAngle) / lipschitz;
+        coneSurfaceD = (d - desc.ray.rad - T * desc.ray.tana) / lipschitz;
 		/*if (coneSurfaceD < 0)
 		{
 			if (coneSurfaceD > highestSmallerThan0)
@@ -60,11 +63,11 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 		{
 			ret.T += coneSurfaceD;
 		}*/
-		ret.T += coneSurfaceD;
+		T += coneSurfaceD;
 
         ++i;
     } while (
-		ret.T < ray.Tmax &&       		// Stay within bound box
+		T <   rayCone.ray.Tmax &&       		// Stay within bound box
 		d     > desc.epsilon &&	            // Stop if close to surface
 		coneSurfaceD > desc.epsilon &&
 		i < desc.maxiters	        	// Stop if too many iterations
@@ -74,7 +77,7 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 	i = 0;*/
 
 	// first it takes one step to inside of object
-	ret.p = ray.P + ret.T * ray.V;
+	ret.p = rayCone.ray.P + T * rayCone.ray.V;
 	/*Ray newRay = Ray(ret.p + computeGradient2(ret.p) * SDF(ret.p), 0.0f, ray.V, ray.Tmax - ret.T);
 
 	float newT = 0.0f;
@@ -131,10 +134,10 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 	if (coneSurfaceD <= desc.epsilon) {
 		vec3 grad = computeGradient2(ret.p);
 		// project grad onto plane at the end of the cone
-		vec3 planeNormal = ray.V;
+		vec3 planeNormal = rayCone.ray.V;
 
 		grad = normalize(grad - dot(grad, planeNormal) * planeNormal);
-		ret.p += (desc.startingRadius + ret.T * desc.tanHalfAngle) * grad;
+		ret.p += (desc.ray.rad + T * desc.ray.tana) * grad;
 	}
 
 	/*if (coneSurfaceD <= desc.epsilon)
@@ -172,7 +175,7 @@ ConeTraceResult cone_trace(Ray ray, ConeTraceDesc desc, ivec3 dim)
 	// bit 0:   distance condition:     true if travelled to far t > t_max
 	// bit 1:   surface condition:      true if distance to surface is small < error threshold
     // bit 2:   iteration condition:    true if took too many iterations
-    ret.flags =  int(ret.T >= ray.Tmax)
+    ret.flags =  int(T >= rayCone.ray.Tmax)
               | (int(d <= desc.epsilon || coneSurfaceD <= desc.epsilon)  << 1)
               | (int(i >= desc.maxiters) << 2);
 

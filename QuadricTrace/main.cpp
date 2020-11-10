@@ -1,6 +1,7 @@
 #include "QuadricRender.h"
 #include "CodeGen/Objects/models.h"
 #include <sstream>
+#include "configurables.h"
 
 // #define TEST
 
@@ -59,13 +60,13 @@ void runSpeedTests(const char* infilename, const char* outfilename, QuadricRende
 			>> at.x >> at.y >> at.z;
 		renderer.SetView(eye, at, glm::vec3(0, 1, 0));
 		arg.model = models[model];
-		arg.method = QuadricRender::SphereTrace::Simple;
+		arg.method = TraceTypes::sphere;
 		out << renderer.RunSpeedTest(arg);
-		arg.method = QuadricRender::SphereTrace::Enhanced;
+		arg.method = TraceTypes::enhanced;
 		out << "," << renderer.RunSpeedTest(arg);
-		arg.method = QuadricRender::SphereTrace::Relaxed;
+		arg.method = TraceTypes::relaxed;
 		out << "," << renderer.RunSpeedTest(arg);
-		arg.method = QuadricRender::SphereTrace::Quadric;
+		arg.method = TraceTypes::quadric;
 		arg.q_arg = { 0.003, 70, 0.01 };
 		out << "," << renderer.RunSpeedTest(arg);
 		arg.q_arg = { 0.003, 70, 0.1 };
@@ -83,18 +84,18 @@ void runErrorTests(const char* outfilename, QuadricRender& renderer)
 	{
 		if (i != 8) continue;
 		renderer.SetView(pos[i], (i == 7 ? glm::vec3(2, 0, 2) : glm::vec3(0)), { 0,1,0 });
-		std::vector<float> base = renderer.RunErrorTest({ models[i], 0, 1000, {}, QuadricRender::SphereTrace::Simple });
+		std::vector<float> base = renderer.RunErrorTest({ models[i], 0, 1000, {}, TraceTypes::sphere });
 		for (int n = 8; n <= 64; n *= 2)
 		{
-			std::vector<float> res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, QuadricRender::SphereTrace::Simple });
+			std::vector<float> res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, TraceTypes::sphere });
 			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, QuadricRender::SphereTrace::Relaxed });
+			res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, TraceTypes::relaxed });
 			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, QuadricRender::SphereTrace::Enhanced });
+			res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, TraceTypes::enhanced });
 			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, {0.003, 70, 0.01}, QuadricRender::SphereTrace::Quadric });
+			res = renderer.RunErrorTest({ models[i], 0, n, {0.003, 70, 0.01}, TraceTypes::quadric });
 			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, { 0.003, 70, 0.1 }, QuadricRender::SphereTrace::Quadric });
+			res = renderer.RunErrorTest({ models[i], 0, n, { 0.003, 70, 0.1 }, TraceTypes::quadric });
 			out << EvalError(base, res) << ',';
 		}
 		out << '\n';
