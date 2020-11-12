@@ -18,7 +18,7 @@
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // image to be written in
-restrict writeonly uniform image3D outField;
+layout(binding = 0) restrict writeonly uniform image3D outField;
 
 #ifndef UNBOUND_QUADRIC
 #define UNBOUND_QUADRIC unboundQuadricBruteForce
@@ -97,9 +97,8 @@ void main()
 
 	QuadricField ret;
 	ret.dist = SDF(p);
-	ret.normal = computeGradient(p);
+	ret.normal = computeGradient2(p);
 	ret.k = UNBOUND_QUADRIC(p, ret.normal, ret.dist);
 	
-	imageStore(outField, coords, vec4(1, 0, 0, 3));
-	// storeQuadricField(outField, coords, ret);
+	storeQuadricField(outField, coords, ret);
 }

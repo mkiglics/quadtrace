@@ -3,7 +3,6 @@
 QuadricRender::~QuadricRender()
 {
 	delete program;
-	delete eccComputeProgram;
 	delete sdfGradientComputeProgram;
 }
 
@@ -13,7 +12,6 @@ void QuadricRender::Init(int gridSize = 16)
 
 	csg_tree = model4_expr();
 	build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
-	//build_footmap("Shaders/Footmap/footmap.glsl", csg_tree);
 
 	if (!LoadSDF("Shaders/sdf.tmp"))
 	{
@@ -30,8 +28,8 @@ void QuadricRender::Init(int gridSize = 16)
 	frameBuff = new df::Renderbuffer<df::depth24>(w, h);
 	//frameBuff = new (df::Renderbuffer<df::depth24>(w, h) + df::Texture2D<>(w, h, 1));
 
-	sdfTexture = df::Texture3D<float>(grid.x, grid.y, grid.z);
-	eccentricityTexture = df::Texture3D<glm::vec4>(grid.x - 1, grid.y - 1, grid.z - 1);
+	eccentricityTexture = df::Texture3D<glm::vec4>(grid.x, grid.y, grid.z);
+	distanceTexture = df::Texture2D<glm::vec4>(w, h);
 	frameTexture = df::Texture2D<glm::vec4>(w, h);
 
 	sam.AddResize([&](int _w, int _h) {
@@ -46,80 +44,46 @@ void QuadricRender::Init(int gridSize = 16)
 	Preprocess();
 }
 
-
-void SaveImageZ(const df::Texture3D<glm::vec4>& texture, const std::string& path)
-{
-	int buffSize = texture.getWidth() * texture.getHeight() * texture.getDepth() * texture.getLevels();
-
-
-	std::vector<float> data(buffSize);
-	glGetTextureImage((GLuint)texture, 0, GL_RGBA32F, GL_FLOAT, sizeof(glm::vec4) * buffSize, &data[0]);
-
-	std::ofstream myfile;
-	myfile.open(path);
-
-	//SDL_Surface* surf = SDL_CreateRGBSurface(0, width, height, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	myfile << texture.getWidth() << " " << texture.getHeight() << " " << texture.getDepth() << "\n";
-	for (int i = 0; i < texture.getWidth(); i++)
-	{
-		for (int k = 0; k < texture.getHeight(); k++)
-		{
-			for (int j = 0; j < texture.getDepth(); j++)
-			{
-				for (int l = 0; l < texture.getLevels(); l++)
-				{
-					myfile << data[i * texture.getHeight() * texture.getDepth() * texture.getLevels() +
-						k * texture.getDepth() * texture.getLevels() +
-						j * texture.getLevels() +
-						l] << " ";
-				}
-				myfile << "\n";
-			}
-		}
-	}
-	//SDL_FreeSurface(surf);
-
-	myfile.close();
-}
-
-
 void QuadricRender::Preprocess()
 {
-	// glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	*sdfGradientComputeProgram << "outField" << eccentricityTexture;
-	glDispatchCompute(grid.x - 1, grid.y - 1, grid.z - 1);
+	glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	*sdfGradientComputeProgram << "a" << 0;
+	glDispatchCompute(grid.x, grid.y, grid.z);
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-	// nem tudom ez jo e most de valszeg nem
-	SaveImageZ(eccentricityTexture, "sdfgrad.txt");
+	/*GLuint textureId = (GLuint)eccentricityTexture;
 
-	/*glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	*eccComputeProgram << "sdf_values" << sdfTexture << "N" << quadricArgs.ray_count << "M" << quadricArgs.ray_count << "correction" << quadricArgs.correction << "useConeTrace" << (int)useConeTrace;
-	glDispatchCompute(grid.x - 1, grid.y - 1, grid.z - 1);
-	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);*/
+	std::vector<glm::vec4> data(grid.x * grid.y * grid.z);
+	glGetTextureImage(textureId, 0, GL_RGBA, GL_FLOAT, sizeof(glm::vec4) * grid.x * grid.y * grid.z, &data[0]);
+	GLenum err;
+	while ((err = glGetError()) != GL_NO_ERROR)
+	{
+		std::cout << "Error " << err << std::endl;
+	}*/
 }
 
 void QuadricRender::Render()
 {
-	return;
-
 	sam.Run([&](float deltaTime) //delta time in ms
 		{
 			cam.Update();
 
-#ifdef DEBUG
-			bool showQuadric = trace_method == TraceTypes::quadric;
-#else
-			bool showQuadric = false;
-#endif
-			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
-				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
-				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
-				<< "delta" << quadricArgs.delta << "error_test" << 0 << "showQuadric" << (int)showQuadric
-				<< "showcaseQuadricCoord" << showcaseQuadricCoord;
-			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			*frameCompProgram << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
+			glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			glBindImageTexture(2, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+#ifdef DEBUG
+			*debugCompProgram << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt()
+							  << "uIllustratedQuadricCood" << illustratedQuadricCoord;
+			glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(2, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			glDispatchCompute(w, h, 1);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+#endif
 
 			df::Backbuffer << df::Clear() << *program << "frame" << frameTexture;
 
@@ -151,7 +115,7 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 
 			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
-				<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
+				<< "eccentricity" << eccentricityTexture << "N" << grid
 				<< "render_quadric" << (int)(arg.method == TraceTypes::quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
 				<< "trace_method" << arg.method.id << "showQuadric" << 0;
 			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -201,7 +165,7 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 		cam.Update();
 		*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 			<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
-			<< "eccentricity" << eccentricityTexture << "N" << grid << "sdf_values" << sdfTexture
+			<< "eccentricity" << eccentricityTexture << "N" << grid
 			<< "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps
 			<< "showQuadric" << 0;
 		glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -252,7 +216,7 @@ void QuadricRender::CompilePreprocess()
 		{"UNBOUND_QUADRIC", useConeTrace ? "unboundQuadricConeTrace" : "unboundQuadricBruteForce"},
 
 		// which tracing to use
-		//{"TRACE", ""}
+		{"PASS1_TRACING(ray, desc, inField)", trace_method.macro_value }
 	};
 	writeDefines(defines);
 }
@@ -274,9 +238,7 @@ bool QuadricRender::Compile()
 	// .. tracing...
 	// main
 	CompilePreprocess();
-	std::cout << " " << std::endl;
 
-	//build_footmap("Shaders/sdf", csg_tree); // generates the function
 	delete sdfGradientComputeProgram;
 	sdfGradientComputeProgram = new df::ComputeProgramEditor("SDF/Gradient Computer");
 	*sdfGradientComputeProgram
@@ -290,31 +252,45 @@ bool QuadricRender::Compile()
 		return false;
 	}
 
-	/*delete program;
-	program = new df::ShaderProgramEditorVF("Shader Editor");
-	*program << "Shaders/common.glsl"_frag << "Shaders/sdf_common.glsl"_frag << "Shaders/sdf.tmp"_frag << "Shaders/quadric.glsl"_frag << "Shaders/vert.vert"_vert << "Shaders/fragment.frag"_frag << df::LinkProgram;
-	if (program->GetErrors().size() > 0)
-	{
-		std::cout << program->GetErrors() << std::endl;
-		return false;
-	}
-
 	delete frameCompProgram;
-	frameCompProgram = new df::ComputeProgramEditor("Frame Computer");
-	*frameCompProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/frame.comp"_comp << "Shaders/Debug/quadric_showcase.comp"_comp << trace_path[(int)trace_method] << df::LinkProgram;
+	frameCompProgram = new df::ComputeProgramEditor("Frame computer");
+	*frameCompProgram
+		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
+		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
+		<< "Shaders/Tracing/sphere_trace.glsl"_comp << "Shaders/Tracing/relaxed_sphere_trace.glsl"_comp
+		<< "Shaders/Tracing/enhanced_sphere_trace.glsl"_comp << "Shaders/Tracing/quadric_trace.glsl"_comp
+		<< "Shaders/Render/pass1.comp"_comp << df::LinkProgram;
 	if (frameCompProgram->GetErrors().size() > 0)
 	{
 		std::cout << frameCompProgram->GetErrors() << std::endl;
 		return false;
 	}
 
-	delete eccComputeProgram;
-	eccComputeProgram = new df::ComputeProgramEditor("Eccentricity Computer");
-	*eccComputeProgram << "Shaders/common.glsl"_comp << "Shaders/sdf_common.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/quadric.glsl"_comp << "Shaders/eccentricity.glsl"_comp << df::LinkProgram;
-	if (eccComputeProgram->GetErrors().size() > 0) {
-		std::cout << eccComputeProgram->GetErrors() << std::endl;
+#ifdef DEBUG
+	delete debugCompProgram;
+	debugCompProgram = new df::ComputeProgramEditor("Frame computer");
+	*debugCompProgram
+		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
+		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
+		<< "Shaders/Math/box.glsl"_comp
+		<< "Shaders/Render/passDebug.comp"_comp << df::LinkProgram;
+	if (debugCompProgram->GetErrors().size() > 0)
+	{
+		std::cout << debugCompProgram->GetErrors() << std::endl;
 		return false;
-	}*/
+	}
+#endif
+
+	delete program;
+	program = new df::ShaderProgramEditorVF("Shader Editor");
+	*program << "Shaders/Render/vert.vert"_vert << "Shaders/Render/fragment.frag"_frag << df::LinkProgram;
+	if (program->GetErrors().size() > 0)
+	{
+		std::cout << program->GetErrors() << std::endl;
+		return false;
+	}
 
 	return true;
 }
@@ -360,10 +336,10 @@ void QuadricRender::RenderUI()
 
 	
 	static int coneTrace = ConeTraceTypes::cube.id;
-	ImGui::RadioButton("Tetrahedron", &renderType, ConeTraceTypes::tetrahedron.id); ImGui::SameLine();
-	ImGui::RadioButton("Cube", &renderType, ConeTraceTypes::cube.id); ImGui::SameLine();
-	ImGui::RadioButton("Octahedron", &renderType, ConeTraceTypes::octahedron.id); ImGui::SameLine();
-	ImGui::RadioButton("Icosahedron", &renderType, ConeTraceTypes::icosahedron.id);
+	ImGui::RadioButton("Tetrahedron", &coneTrace, ConeTraceTypes::tetrahedron.id); ImGui::SameLine();
+	ImGui::RadioButton("Cube", &coneTrace, ConeTraceTypes::cube.id); ImGui::SameLine();
+	ImGui::RadioButton("Octahedron", &coneTrace, ConeTraceTypes::octahedron.id); ImGui::SameLine();
+	ImGui::RadioButton("Icosahedron", &coneTrace, ConeTraceTypes::icosahedron.id);
 
 	if (trace_method.id != renderType || coneTraceDesc.id != coneTrace) 
 	{
@@ -380,14 +356,14 @@ void QuadricRender::RenderUI()
 			Preprocess();
 		}
 
-		ImGui::DragInt("Showcase quadric X", &showcaseQuadricCoord.x, 0.1, -grid.x, grid.x);
-		ImGui::DragInt("Showcase quadric Y", &showcaseQuadricCoord.y, 0.1, -grid.y, grid.y);
-		ImGui::DragInt("Showcase quadric Z", &showcaseQuadricCoord.z, 0.1, -grid.z, grid.z);
+		ImGui::DragInt("Illustrated quadric X", &illustratedQuadricCoord.x, 0.1, -grid.x, grid.x);
+		ImGui::DragInt("Illustrated quadric Y", &illustratedQuadricCoord.y, 0.1, -grid.y, grid.y);
+		ImGui::DragInt("Illustrated quadric Z", &illustratedQuadricCoord.z, 0.1, -grid.z, grid.z);
 	}
 
 	if (ImGui::Button("Save eccentricity")) 
 	{
-		SaveImageZ(eccentricityTexture, "Eccentricity.txt");
+		// SaveImageZ(eccentricityTexture, "Eccentricity.txt");
 	}
 #endif
 	ImGui::End();

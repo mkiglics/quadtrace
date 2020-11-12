@@ -3,6 +3,7 @@
 //?#include "../SDF/SDFcommon.glsl"
 
 #define TRACE_OR 1.6
+
 TraceResult relaxedSphereTracing(in Ray ray, in SphereTraceDesc params)
 {
 	TraceResult ret = TraceResult(ray.Tmin, 0);

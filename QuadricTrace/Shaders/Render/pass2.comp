@@ -1,5 +1,7 @@
 //?#version 450
+
 //?#include "../Math/graphics.comp"
+//?#include "../SDF/SDFprimitives.glsl"
 //?#include "../SDF/SDFcommon.glsl"
 //?#include "../Tracing/enhanced_sphere_trace.glsl"
 
@@ -12,7 +14,7 @@ void main()
 	ivec2 pixel = gl_GlobalInvocationID.xy;
 	ivec2 resolution = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
 	RayCone raycone = Camera(pixel, resolution);
-	ray.dist = imageLoad(inDistance,pixel).r;
+	ray.dist = imageLoad(inDistance, pixel).r;
 	ConeTraceResult result = enhancedConeTrace(raycone, SphereTraceDesc(0.001, 64)));
 
 	vec3 norm = computeGradient2(result.p);

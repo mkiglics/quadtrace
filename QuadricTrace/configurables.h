@@ -8,12 +8,12 @@ namespace TraceTypes {
 	struct TraceType
 	{
 		int id;
-		std::string function_name;
+		std::string macro_value;
 	};
-	inline const TraceType sphere = {0, "sphereTrace"};
-	inline const TraceType relaxed = {1, "relaxedSphereTracing"};
-	inline const TraceType enhanced = {2, "enhancedSphereTrace"};
-	inline const TraceType quadric = {3, "quadricTrace"};	
+	inline const TraceType sphere = {0, "(sphereTrace(ray, desc))"};
+	inline const TraceType relaxed = {1, "(relaxedSphereTracing(ray, desc))"};
+	inline const TraceType enhanced = {2, "(enhancedSphereTrace(ray, desc))"};
+	inline const TraceType quadric = {3, "(quadricTrace(ray, desc, inField))"};	
 	inline const std::vector<TraceType> traceTypes {
 		TraceTypes::sphere, TraceTypes::relaxed, TraceTypes::enhanced, TraceTypes::quadric 
 	};

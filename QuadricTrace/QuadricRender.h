@@ -52,23 +52,23 @@ private:
 	ConeTraceTypes::ConeTraceType coneTraceDesc = ConeTraceTypes::cube;
 
 	// debugging quadric
-	glm::ivec3 showcaseQuadricCoord = glm::ivec3(0);
+	glm::ivec3 illustratedQuadricCoord = glm::ivec3(0);
 
 	glm::ivec3 grid;
 	// a variable that is used all over the place to store text
 	TraceTypes::TraceType trace_method = TraceTypes::quadric;
 	QuadricArg quadricArgs;
 
-	df::Texture3D<float> sdfTexture;
 	df::Texture3D<glm::vec4> eccentricityTexture;
+	df::Texture2D<glm::vec4> distanceTexture;
 	df::Texture2D<glm::vec4> frameTexture;
 
 	df::Renderbuffer<df::depth24>* frameBuff;
 
 	df::ShaderProgramEditorVF* program;
 	df::ComputeProgramEditor* frameCompProgram;
+	df::ComputeProgramEditor* debugCompProgram;
 	df::ComputeProgramEditor* sdfGradientComputeProgram;
-	df::ComputeProgramEditor* eccComputeProgram;
 
 	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, df::Sample::FLAGS::DEFAULT | df::Sample::FLAGS::RENDERDOC); //handles Events and such
 	df::Camera cam;
@@ -85,18 +85,12 @@ private:
 		{"Wheels with holes", model9_expr() },
 		{"Mickey mouse", model10_expr(4) }
 	};
-	const std::vector<df::detail::_CompShader> trace_path = {
-		"Shaders/SphereTrace/sphere_trace.glsl"_comp,
-		"Shaders/SphereTrace/relaxed_sphere_trace.glsl"_comp,
-		"Shaders/SphereTrace/enhanced_sphere_trace.glsl"_comp,
-		"Shaders/quadric_trace.glsl"_comp
-	};	
 
 	//codegen
 	MyExpr *csg_tree;
 };
 
-template<typename T>
+/*template<typename T>
 struct ASD {
 	using value_type = T;
 	int size = 1;
@@ -105,4 +99,4 @@ template<int I, typename T, glm::qualifier Q>
 struct ASD<glm::vec<I, T, Q>>{
 	using value_type = T;
 	int size = I;
-};
+};*/

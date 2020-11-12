@@ -5,8 +5,6 @@
 
 // Must be in compute shader
 
-const float pi = 3.1415926535897932384626433832795;
-
 
 // todo later: Camera UBO
 uniform vec3  uCameraEye;
@@ -41,7 +39,7 @@ struct Material
 
 vec3 radiance(vec3 n, vec3 l, vec3 v, in Material mat)
 {
-    vec3 F0 = mat.color*mat.metalness;
+    vec3 F0 = mat.color * mat.metalness;
     vec3  h = normalize(l + v);
 
     //CookTorrenceGeometry
@@ -65,19 +63,28 @@ vec3 radiance(vec3 n, vec3 l, vec3 v, in Material mat)
 	return (specular + diffuse) * ln;
 }
 
-
-uniform vec3 uLightPos = vec3(10);
-uniform vec3 uLightColor = vec3(10);
-
-struct PointLight{
+struct PointLight
+{
     vec3 pos;
+    vec3 col;
+};
+
+struct DirectionalLight
+{
+    vec3 dir;
     vec3 col;
 };
 
 vec3 shadePointLight(vec3 p, vec3 n, Material mat, PointLight light)
 {
-    vec3 l = light.pos-p;
-    float invlen = 1./length(l);
+    vec3 l = light.pos - p;
+    float invlen = 1.0f / length(l);
     l *= invlen;
-    return radiance(n, l, normalize(uCameraEye-p), mat)*uLightColor*(invlen*invlen);
+    return radiance(n, l, normalize(uCameraEye - p), mat) * light.col * (invlen*invlen);
+}
+
+vec3 shadeDirectionalLight(vec3 p, vec3 n, Material mat, DirectionalLight light)
+{
+    vec3 l = -normalize(light.dir);
+    return radiance(n, l, normalize(uCameraEye - p), mat) * light.col;
 }
