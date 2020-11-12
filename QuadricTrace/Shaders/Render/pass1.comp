@@ -1,10 +1,20 @@
 #version 450
+//?#include "../Math/interface.glsl"
+//?#include "../SDF/SDFcommon.glsl"
+//?#include "../Tracing/quadric_trace.glsl"
 
-
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 restrict readonly uniform image3D inField;
 restrict writeonly uniform image2D outDistance;
 
 void main()
 {
+	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 resolution = ivec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 	
+	RayCone raycone = Camera(pixel, resolution);
+
+	TraceResult res = quadricTraceField(raycone.ray, SphereTraceDesc(0.001, 64), inField);
+
+	imageStore(outDistance, vec4(res.T));
 }

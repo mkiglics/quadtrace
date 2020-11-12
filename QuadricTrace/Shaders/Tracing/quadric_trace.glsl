@@ -2,6 +2,8 @@
 //?#include "../SDF/SDFprimitives.glsl"
 //?#include "../SDF/SDFcommon.glsl"
 //?#include "../Math/interface.glsl"
+//?#include "../Math/quadric.glsl"
+//?#include "../Math/common.glsl"
 //?#include "enhanced_sphere_trace.glsl"
 
 TraceResult quadricTrace01(in Ray ray, in SphereTraceDesc params)
@@ -52,6 +54,39 @@ TraceResult quadricTrace01(in Ray ray, in SphereTraceDesc params)
 
 }
 
+TraceResult quadricTraceField(in Ray ray, in SphereTraceDesc params, restrict in readonly image3D inField)
+{
+	TraceResult ret = TraceResult(ray.Tmin, 0);
+	vec3 p, dir;
+	float k, t, d;
+	mat3 rot;
+	int i = 0; do
+    {
+		p = ray.P+ret.T*ray.V;
+		QuadricField field = decodeQuadricField(imageLoad(inField, globalToVoxel(p, N-ivec3(1))));
+
+
+		float dist = field.dist;
+		dir = field.normal;
+		k = field.k;
+		rot = getRotation(dir);
+		t = quadric_Intersect_Closest(p, ray.V, round(p), dir, k);
+		d = max(t, dist - 0.7);
+
+		if (d < 10 * params.epsilon * ret.T) 
+		{						 
+			break;
+		}
+		ret.T += d;
+        ++i;
+	} while (
+		ret.T < ray.Tmax &&       			// Stay within bound box
+		d	  > params.epsilon * ret.T &&	// Stop if close to surface
+		i     < params.maxiters	        	// Stop if too many iterations
+	);
+
+	return ret;
+}
 
 TraceResult quadricTrace(in Ray ray, in SphereTraceDesc params)
 {

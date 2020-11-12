@@ -34,6 +34,28 @@ vec2 quadric_Intersect(vec3 p, vec3 v, vec3 p0, vec3 n0, float k)
 	return quadric_LocalIntersect(quadric_GetCoeffs(k), p - p0, getRotation(n0) * v);
 }
 
+float quadric_Intersect_Closest(vec3 p, vec3 v, vec3 p0, vec3 n0, float k)
+{
+	vec2 t12 = quadric_Intersect(p, v, p0, n0, k);
+	float t1 = min(t12.x,t12.y), t2 = max(t12.x,t12.y);
+	
+	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
+	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
+
+	float t = 0;
+	if (k < 0) {
+		if (t2 == inf) t = t1;
+		else if (t1<0 && t1>-inf) t = t2;
+		else if (t2 > 0) t = 0;
+		else t = inf;
+	} else  {
+		if (t1==-inf) t = t2;
+		else if (t2>0 && t2<inf) t = t1;
+		else if (t1<0) t = inf;
+	}
+	return t;
+}
+
 float quadric_Implicit(vec3 p, vec3 p0, vec3 n0, float k)
 {
 	//todo
