@@ -20,7 +20,8 @@ layout(rgba32f, binding = 2) restrict uniform image2D outColor;
 
 uniform ivec3 uIllustratedQuadricCood = ivec3(4, 0, 0);
 const Material quadricMaterial = Material(vec3(1.0, 0.2, 0.2), 0.1, 1.1, 0.02);
-const DirectionalLight quadricLight = DirectionalLight(vec3(-1, -1, -1), vec3(0.8));
+const DirectionalLight quadricLight = DirectionalLight(vec3(-1, -1, -1), vec3(1.8));
+const DirectionalLight quadricLight2 = DirectionalLight(vec3(1, 1, 1), vec3(1.2));
 
 /*
 */
@@ -47,14 +48,16 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 	// mix color for quadric
 	if (quadricIntersected) 
 	{
-		retColor += vec3(0.5f, 0.0f, 0.0f);
-		/*
+		//retColor += vec3(0.5f, 0.0f, 0.0f);
+		
 		// where the quadric was hit by the camera ray
 		vec3 quadricHitPos = cameraRay.ray.P + cameraRay.ray.V * closerT;
 
 		// the above hit pos in the quadric's local space
-		vec3 quadricNormal = quadric_GetNormal(quadricHitPos, uIllustratedQuadricCood, field.normal, field.k);
-		retColor += shadeDirectionalLight(quadricHitPos, -quadricNormal, quadricMaterial, quadricLight);
+		vec3 quadricNormal = -quadric_GetNormal(quadricHitPos, quadricPos, field.normal, field.k);
+		// retColor += clamp(shadeDirectionalLight(quadricHitPos, quadricNormal, quadricMaterial, quadricLight), vec3(0), vec3(1));
+		return quadricNormal;
+		// retColor += clamp(shadeDirectionalLight(quadricHitPos, quadricNormal, quadricMaterial, quadricLight2), vec3(0), vec3(1));
 
 		/*const vec3 inFrontOfQuadric = vec3(255, 0, 0) / 255.0;
 		const vec3 insideQuadric = vec3(0, 255, 0) / 255.0;
@@ -79,5 +82,5 @@ void main()
 	vec3 previousColor = clamp(imageLoad(outColor, pixel).xyz, vec3(0), vec3(1));
 	
 	// imageStore(outColor, pixel, vec4(field.dist));
-	imageStore(outColor, pixel, vec4(mix(previousColor, quadricColor, 0.5f), 1));
+	imageStore(outColor, pixel, vec4(mix(previousColor, quadricColor, 0.3f), 1));
 }

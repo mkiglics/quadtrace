@@ -9,6 +9,7 @@ QuadricRender::~QuadricRender()
 void QuadricRender::Init(int gridSize = 16)
 {
 	grid = glm::ivec3(gridSize);
+	kAndDistValues.resize(grid.x * grid.y * grid.z);
 
 	csg_tree = model4_expr();
 	build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
@@ -51,15 +52,18 @@ void QuadricRender::Preprocess()
 	glDispatchCompute(grid.x, grid.y, grid.z);
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-	/*GLuint textureId = (GLuint)eccentricityTexture;
+#ifdef DEBUG
+	GLuint textureId = (GLuint)eccentricityTexture;
 
 	std::vector<glm::vec4> data(grid.x * grid.y * grid.z);
 	glGetTextureImage(textureId, 0, GL_RGBA, GL_FLOAT, sizeof(glm::vec4) * grid.x * grid.y * grid.z, &data[0]);
-	GLenum err;
-	while ((err = glGetError()) != GL_NO_ERROR)
+
+	for (int i = 0; i < kAndDistValues.size(); i++)
 	{
-		std::cout << "Error " << err << std::endl;
-	}*/
+		kAndDistValues[i].x = glm::length(glm::vec3(data[i].y, data[i].z, data[i].w)) - 2.0f;
+		kAndDistValues[i].y = data[i].x;
+	}
+#endif
 }
 
 void QuadricRender::Render()
@@ -242,9 +246,10 @@ bool QuadricRender::Compile()
 	delete sdfGradientComputeProgram;
 	sdfGradientComputeProgram = new df::ComputeProgramEditor("SDF/Gradient Computer");
 	*sdfGradientComputeProgram
-		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/defines.glsl"_comp << "Shaders/Preprocess/constants.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
 		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
 		<< "Shaders/Tracing/enhanced_sphere_trace.glsl"_comp << "Shaders/Tracing/cone_trace.glsl"_comp
+		<< "Shaders/Tracing/sphere_trace.glsl"_comp
 		<< "Shaders/Preprocess/step1.glsl"_comp << df::LinkProgram;
 	if (sdfGradientComputeProgram->GetErrors().size() > 0)
 	{
@@ -255,7 +260,7 @@ bool QuadricRender::Compile()
 	delete frameCompProgram;
 	frameCompProgram = new df::ComputeProgramEditor("Frame computer");
 	*frameCompProgram
-		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/defines.glsl"_comp << "Shaders/Preprocess/constants.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
 		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
 		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
 		<< "Shaders/Tracing/sphere_trace.glsl"_comp << "Shaders/Tracing/relaxed_sphere_trace.glsl"_comp
@@ -271,7 +276,7 @@ bool QuadricRender::Compile()
 	delete debugCompProgram;
 	debugCompProgram = new df::ComputeProgramEditor("Frame computer");
 	*debugCompProgram
-		<< "Shaders/Preprocess/constants.glsl"_comp << "Shaders/defines.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/defines.glsl"_comp << "Shaders/Preprocess/constants.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
 		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
 		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
 		<< "Shaders/Math/box.glsl"_comp
@@ -349,16 +354,23 @@ void QuadricRender::RenderUI()
 		Preprocess();
 	}
 
-	if (trace_method == TraceTypes::quadric) 
+	if (true || trace_method == TraceTypes::quadric) 
 	{
 		if (ImGui::Checkbox("Use cone trace", &useConeTrace)) 
 		{
+			Compile();
 			Preprocess();
 		}
 
-		ImGui::DragInt("Illustrated quadric X", &illustratedQuadricCoord.x, 0.1, -grid.x, grid.x);
-		ImGui::DragInt("Illustrated quadric Y", &illustratedQuadricCoord.y, 0.1, -grid.y, grid.y);
-		ImGui::DragInt("Illustrated quadric Z", &illustratedQuadricCoord.z, 0.1, -grid.z, grid.z);
+		ImGui::DragInt("Illustrated quadric X", &illustratedQuadricCoord.x, 0.1, 0, grid.x - 1);
+		ImGui::DragInt("Illustrated quadric Y", &illustratedQuadricCoord.y, 0.1, 0, grid.y - 1);
+		ImGui::DragInt("Illustrated quadric Z", &illustratedQuadricCoord.z, 0.1, 0, grid.z - 1);
+
+		int kIndex = (illustratedQuadricCoord.x) * grid.y * grid.z +
+					 (illustratedQuadricCoord.y) * grid.z +
+					 (illustratedQuadricCoord.z);
+		ImGui::Text("K = %f", kAndDistValues[kIndex].x);
+		ImGui::Text("Dist = %f", kAndDistValues[kIndex].y);
 	}
 
 	if (ImGui::Button("Save eccentricity")) 

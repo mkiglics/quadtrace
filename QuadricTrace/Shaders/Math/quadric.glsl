@@ -87,7 +87,7 @@ vec3 quadric_LocalGetNormal(vec3 point, float k)
 	return normalize(vec3(
 		2 * ABC.x * point.x,
 		2 * ABC.y * point.y + ABC.z,
-		2 * ABC.x * point.z
+		2 * ABC.z * point.z
 	));
 }
 
@@ -96,33 +96,10 @@ vec3 quadric_LocalGetNormal(vec3 point, float k)
 */
 vec3 quadric_GetNormal(vec3 p, vec3 p0, vec3 n0, float k) 
 {
-	vec3 ABC = quadric_GetCoeffs(k);
 	mat3 rot = getRotation(n0);
 
 	// from the implicit function's gradient
 	return rot * quadric_LocalGetNormal(rot * (p - p0), k);
-}
-
-float quadric_Intersect_Closest(vec3 p, vec3 v, vec3 p0, vec3 n0, float k)
-{
-	vec2 t12 = quadric_Intersect(p, v, p0, n0, k);
-	float t1 = min(t12.x,t12.y), t2 = max(t12.x,t12.y);
-	
-	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
-	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
-
-	float t = 0;
-	if (k < 0) {
-		if (t2 == inf) t = t1;
-		else if (t1<0 && t1>-inf) t = t2;
-		else if (t2 > 0) t = 0;
-		else t = inf;
-	} else  {
-		if (t1==-inf) t = t2;
-		else if (t2>0 && t2<inf) t = t1;
-		else if (t1<0) t = inf;
-	}
-	return t;
 }
 
 float quadric_Implicit(vec3 p, vec3 p0, vec3 n0, float k)
@@ -134,9 +111,7 @@ float quadric_Implicit(vec3 p, vec3 p0, vec3 n0, float k)
 // returns the quadric's parameter
 float quadric_ComputeParameter(vec2 local_pos)
 {
-	// when x=0 getK would return inf or nan otherwise
-	float x = max(abs(local_pos.x), 0.0001);
-	float a = (local_pos.y > 0 ? 1 : -1) * 2 * local_pos.y * local_pos.y - local_pos.y; //which branch of quadric?
-	vec2 ret = solveQuadratic(x * x,  a, -local_pos.y * local_pos.y); //sorted roots
+	float a = (local_pos.y >= 0 ? 1 : -1) * 2 * local_pos.y * local_pos.y - local_pos.y; //which branch of quadric?
+	vec2 ret = solveQuadratic(local_pos.x * local_pos.x,  a, -local_pos.y * local_pos.y); //sorted roots
 	return local_pos.y > 0 ? ret.y : ret.x; // unbounding or bounding
 }

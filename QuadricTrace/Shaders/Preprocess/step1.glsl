@@ -3,6 +3,7 @@
 //?#include "../SDF/SDFcommon.glsl"
 //?#include "../SDF/SDFprimitives.glsl"
 //?#include "../Tracing/cone_trace.glsl"
+//?#include "../Tracing/sphere_trace.glsl"
 //?#include "../Tracing/enhanced_sphere_trace.glsl"
 //?#include "../Math/common.glsl"
 //?#include "../Math/quadric.glsl"
@@ -24,14 +25,14 @@ layout(binding = 0) restrict writeonly uniform image3D outField;
 #define UNBOUND_QUADRIC unboundQuadricBruteForce
 #endif
 
-uniform float correction = 0.01f;
-uniform ivec2 uSampleResolution = ivec2(10, 10);
+uniform float uCorrection = 0.01f;
+uniform ivec2 uSampleResolution = ivec2(100, 100);
 
 /* The brute force method (sending rays in a lot of directions) for computing k.
 */
 float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 {
-	float k = -1;
+	float k = 1;
 
 	for (int i = 0; i < uSampleResolution.x; ++i)
 	{
@@ -43,7 +44,7 @@ float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 			vec3 d = normalize(vec3(cos(u) * sin(v), cos(v), sin(u) * sin(v)));
 			Ray r = Ray(p, 0.0, d, 100);
 			
-			TraceResult res = enhancedSphereTrace(r, SphereTraceDesc(1, 100));
+			TraceResult res = sphereTrace(r, SphereTraceDesc(0.01, 100));
 			if (bool(res.flags & 1) || bool(res.flags & 4)) { continue; }
 
 			// if hits the surface, evaluate minimal k
@@ -51,7 +52,7 @@ float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 			float cosPhi = dot(d, n);
 			float sinPhi = length(cross(d, n));
 			vec2 pos2d = vec2(sinPhi, cosPhi) * scale;
-			k = min(k, mix(quadric_ComputeParameter(pos2d), -1.0, correction));
+			k = min(k, mix(quadric_ComputeParameter(pos2d), -1.0, uCorrection));
 		}
 	}
 
@@ -60,7 +61,7 @@ float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 
 float unboundQuadricConeTrace(in vec3 p, in vec3 n, in float dist)
 {
-	float k = -1;
+	float k = 1;
 
 	int ray_count = RAY_DIRECTIONS.length();
 
@@ -97,7 +98,7 @@ void main()
 
 	QuadricField ret;
 	ret.dist = SDF(p);
-	ret.normal = computeGradient2(p);
+	ret.normal = computeGradient(p);
 	ret.k = UNBOUND_QUADRIC(p, ret.normal, ret.dist);
 	
 	storeQuadricField(outField, coords, ret);

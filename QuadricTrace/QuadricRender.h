@@ -63,6 +63,9 @@ private:
 	df::Texture2D<glm::vec4> distanceTexture;
 	df::Texture2D<glm::vec4> frameTexture;
 
+	// contains the k values after a preprocess step if we are in debug mode
+	std::vector<glm::vec2> kAndDistValues;
+
 	df::Renderbuffer<df::depth24>* frameBuff;
 
 	df::ShaderProgramEditorVF* program;

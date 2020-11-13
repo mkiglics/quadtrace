@@ -14,7 +14,7 @@ TraceResult sphereTrace(in Ray ray, in SphereTraceDesc params)
         ++i;
     } while (
 		ret.T < ray.Tmax &&       			// Stay within bound box
-		d	  > params.epsilon * ret.T &&	// Stop if cone is close to surface
+		d	  > params.epsilon &&	        // Stop if cone is close to surface
 		i     < params.maxiters	        	// Stop if too many iterations
 	);
     
