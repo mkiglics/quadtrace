@@ -58,7 +58,34 @@ float quadric_IntersectClosest(vec3 p, vec3 v, vec3 p0, vec3 n0, float k)
 {
 	vec2 t12 = quadric_Intersect(p, v, p0, n0, k);
 	float t1 = min(t12.x,t12.y), t2 = max(t12.x,t12.y);
+
+	p = getRotation(n0) * (p-p0);
+	v = getRotation(n0) * v;
+	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
+	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
+
+	float t = 0;
+	if (k < 0) {
+		if (t2 == inf) t = t1;
+		else if (t1<0 && t1>-inf) t = t2;
+		else if (t2 > 0) t = 0;
+		else t = inf;
+	} else  {
+		if (t1==-inf) t = t2;
+		else if (t2>0 && t2<inf) t = t1;
+		else if (t1<0) t = inf;
+	}
+	return t;
+}
+
+float intersectQuadric(in vec3 p, in vec3 v, in float k)
+{
+	if (k < -0.99) return 0;
+	vec3 ABC = quadric_GetCoeffs(k);
+	vec2 t12 = quadric_LocalIntersect(ABC, p, v);
+	float t1 = t12.x, t2 = t12.y;
 	
+	//remove one of the branches of a hyperboloid
 	if( (p.y+t1*v.y)*k < 0 ) t1 = -inf;
 	if( (p.y+t2*v.y)*k < 0 ) t2 = inf;
 

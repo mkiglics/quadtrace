@@ -32,7 +32,7 @@ uniform ivec2 uSampleResolution = ivec2(100, 100);
 */
 float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 {
-	float k = 1;
+	float k = 2;
 
 	for (int i = 0; i < uSampleResolution.x; ++i)
 	{
@@ -56,7 +56,7 @@ float unboundQuadricBruteForce(in vec3 p, in vec3 n, in float dist)
 		}
 	}
 
-	return k;
+	return (k > 1 ? -1 : k);
 }
 
 float unboundQuadricConeTrace(in vec3 p, in vec3 n, in float dist)
@@ -98,7 +98,7 @@ void main()
 
 	QuadricField ret;
 	ret.dist = SDF(p);
-	ret.normal = computeGradient(p);
+	ret.normal = -computeGradient(p);
 	ret.k = UNBOUND_QUADRIC(p, ret.normal, ret.dist);
 	
 	storeQuadricField(outField, coords, ret);

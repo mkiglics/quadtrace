@@ -41,6 +41,7 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 	// the 2 intersection points for the quadric and the camera ray
 	vec2 intersectionTs = quadric_Intersect(cameraRay.ray.P, cameraRay.ray.V, quadricPos, field.normal, field.k);
 	float closerT = min(intersectionTs.x, intersectionTs.y);
+//	closerT = quadric_IntersectClosest(cameraRay.ray.P, cameraRay.ray.V, quadricPos, field.normal, field.k);
 	float fartherT = max(intersectionTs.x, intersectionTs.y);
 
 	bool quadricIntersected = closerT > 0 && !isinf(closerT);
@@ -66,7 +67,6 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 		objectColor = (res.T < minQuadricT) ? inFrontOfQuadric :
 				      (res.T < maxQuadricT) ? insideQuadric    : behindQuadric;*/
 	}
-
 	return clamp(retColor, vec3(0), vec3(1));
 }
 

@@ -7,8 +7,8 @@
 //?#include "../Math/quadric.glsl"
 //?#include "enhanced_sphere_trace.glsl"
 
-/*
-TraceResult trace(in Ray ray, in SphereTraceDesc params)
+
+TraceResult trace(in Ray ray, in SphereTraceDesc params, restrict in readonly image3D inField)
 {
     TraceResult ret = TraceResult(ray.Tmin, 0);
     float d;
@@ -22,13 +22,12 @@ TraceResult trace(in Ray ray, in SphereTraceDesc params)
 		p = ray.P+ret.T*ray.V;
 
 		//center of the current cell
-		c =  globalToTexel(p, N-ivec3(1));
+//		c =  globalToTexel(p, N-ivec3(1));
 		//direction of the surface
-		vec4 tex = texelFetch(eccentricity, c, 0);
-		float dist = texelFetch(sdf_values, globalToTexel(p, N), 0).r;
-		dir = tex.yzw;
-		//parameter of the quadric
-		k = tex.x;
+		QuadricField quadric = loadQuadricField(inField, p);
+		k = quadric.k;
+		float dist = quadric.dist;
+		dir = quadric.normal;
 		rot = getRotation(dir);
 		//the parameter of the closest intersection point
 		t = intersectQuadric(rot*(p-round(p)), rot*ray.V, k);
@@ -68,7 +67,7 @@ TraceResult trace(in Ray ray, in SphereTraceDesc params)
               | (int(i >= params.maxiters) << 2);
     return ret;
 }
-*/
+
 
 TraceResult quadricTrace01(in Ray ray, in SphereTraceDesc params, layout(rgba32f) restrict readonly image3D inField)
 {
@@ -88,13 +87,11 @@ TraceResult quadricTrace01(in Ray ray, in SphereTraceDesc params, layout(rgba32f
 		float dist = quadric.dist;
 		dir = quadric.normal;
 
-		rot = getRotation(dir);
 		//the parameter of the closest intersection point
-		//t = quadric_LocalIntersectClosest(rot*(p - round(p)), rot * ray.V, k);
 		ivec3 quadricPos = globalToVoxel(p, imageSize(inField));
-		t = quadric_IntersectClosest(p, ray.V, quadricPos, dir, k);
-		d = max(t, dist - 0.7);
-
+		t = quadric_IntersectClosest(p, ray.V, voxelToGlobal(quadricPos, imageSize(inField)), dir, k);
+		d = t;//max(t, dist - 1);
+	
 		if (d < 10 * params.epsilon * ret.T) 
 		{						 
 			break;
@@ -152,5 +149,6 @@ TraceResult quadricTrace(Ray ray, in SphereTraceDesc params, layout(rgba32f) res
     TraceResult a = quadricTrace01(ray, params, inField);
 	ray.Tmin = a.T;
 	TraceResult b = enhancedSphereTrace(ray, params);
+//	b = trace(ray, params, inField);
 	return b;
 }
