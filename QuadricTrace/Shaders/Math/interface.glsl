@@ -13,7 +13,10 @@ vec3 voxelToGlobal(ivec3 p, ivec3 grid_size)
 ivec3 globalToVoxel(vec3 p, ivec3 grid_size)
 {
 	ivec3 size = ivec3(grid_size);
-	return ivec3(clamp(floor((p-uAabbCorner)/uAabbSize*size), vec3(0), size));
+
+	//TODO
+	//wrong quadricField in size
+	return ivec3(clamp(floor((p-uAabbCorner)/uAabbSize*size), vec3(0), size-ivec3(1)));
 }
 
 /*

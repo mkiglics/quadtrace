@@ -31,5 +31,7 @@ TraceResult enhancedSphereTrace(in Ray ray, in SphereTraceDesc params)
 	ret.flags =  int(ret.T >= ray.Tmax)
               | (int(rn <= params.epsilon)  << 1)
               | (int(i >= params.maxiters) << 2); 
+
+//	ret.flags = i;
 	return ret;
 }

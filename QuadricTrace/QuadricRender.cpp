@@ -72,12 +72,18 @@ void QuadricRender::Render()
 		{
 			cam.Update();
 
-			*frameCompProgram << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
+			*pass1Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
 			glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
-			glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-			glBindImageTexture(2, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+			*pass2Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
+			glBindImageTexture(0, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			glDispatchCompute(w, h, 1);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
 
 #ifdef DEBUG
 			*debugCompProgram << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt()
@@ -89,6 +95,8 @@ void QuadricRender::Render()
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 #endif
 
+			//pass1Program->Render();
+			//debugCompProgram->Render();
 			df::Backbuffer << df::Clear() << *program << "frame" << frameTexture;
 
 			*program << df::NoVao(GL_TRIANGLE_STRIP, 4);
@@ -117,7 +125,7 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 		{
 			cam.Update();
 
-			*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
+			*pass2Program << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 				<< "eccentricity" << eccentricityTexture << "N" << grid
 				<< "render_quadric" << (int)(arg.method == TraceTypes::quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
@@ -167,7 +175,7 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 		}
 		++frame;
 		cam.Update();
-		*frameCompProgram << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
+		*pass2Program << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
 			<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
 			<< "eccentricity" << eccentricityTexture << "N" << grid
 			<< "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps
@@ -257,18 +265,28 @@ bool QuadricRender::Compile()
 		return false;
 	}
 
-	delete frameCompProgram;
-	frameCompProgram = new df::ComputeProgramEditor("Frame computer");
-	*frameCompProgram
+	delete pass1Program;
+	pass1Program = new df::ComputeProgramEditor("Pass 1 computer");
+	*pass1Program 
 		<< "Shaders/defines.glsl"_comp << "Shaders/Preprocess/constants.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
 		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
 		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
 		<< "Shaders/Tracing/sphere_trace.glsl"_comp << "Shaders/Tracing/relaxed_sphere_trace.glsl"_comp
 		<< "Shaders/Tracing/enhanced_sphere_trace.glsl"_comp << "Shaders/Tracing/quadric_trace.glsl"_comp
 		<< "Shaders/Render/pass1.comp"_comp << df::LinkProgram;
-	if (frameCompProgram->GetErrors().size() > 0)
+
+	delete pass2Program;
+	pass2Program = new df::ComputeProgramEditor("Pass 2 computer");
+	*pass2Program
+		<< "Shaders/defines.glsl"_comp << "Shaders/Preprocess/constants.glsl"_comp << "Shaders/Math/common.glsl"_comp << "Shaders/Math/quadric.glsl"_comp
+		<< "Shaders/SDF/SDFprimitives.glsl"_comp << "Shaders/SDF/SDFcommon.glsl"_comp << "Shaders/sdf.tmp"_comp << "Shaders/Math/interface.glsl"_comp
+		<< "Shaders/Math/distanceInterface.glsl"_comp << "Shaders/Math/graphics.comp"_comp
+		<< "Shaders/Tracing/sphere_trace.glsl"_comp << "Shaders/Tracing/relaxed_sphere_trace.glsl"_comp
+		<< "Shaders/Tracing/enhanced_sphere_trace.glsl"_comp << "Shaders/Tracing/quadric_trace.glsl"_comp
+		<< "Shaders/Render/pass2.comp"_comp << df::LinkProgram;
+	if (pass2Program->GetErrors().size() > 0)
 	{
-		std::cout << frameCompProgram->GetErrors() << std::endl;
+		std::cout << pass2Program->GetErrors() << std::endl;
 		return false;
 	}
 

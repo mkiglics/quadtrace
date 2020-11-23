@@ -147,6 +147,7 @@ TraceResult quadricTraceField(in Ray ray, in SphereTraceDesc params, restrict in
 TraceResult quadricTrace(Ray ray, in SphereTraceDesc params, layout(rgba32f) restrict readonly image3D inField)
 {
     TraceResult a = quadricTrace01(ray, params, inField);
+	return a;
 	ray.Tmin = a.T;
 	TraceResult b = enhancedSphereTrace(ray, params);
 //	b = trace(ray, params, inField);

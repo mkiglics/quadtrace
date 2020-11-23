@@ -69,9 +69,10 @@ private:
 	df::Renderbuffer<df::depth24>* frameBuff;
 
 	df::ShaderProgramEditorVF* program;
-	df::ComputeProgramEditor* frameCompProgram;
 	df::ComputeProgramEditor* debugCompProgram;
 	df::ComputeProgramEditor* sdfGradientComputeProgram;
+	df::ComputeProgramEditor* pass1Program;
+	df::ComputeProgramEditor* pass2Program;
 
 	df::Sample sam = df::Sample("Quadric Tracing", 640, 480, df::Sample::FLAGS::DEFAULT | df::Sample::FLAGS::RENDERDOC); //handles Events and such
 	df::Camera cam;
