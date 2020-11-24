@@ -48,6 +48,7 @@ struct ConeTraceDesc
 	float epsilon;
 	int maxiters;
 	RayCone ray;
+	vec3 quadricNormal;
 };
 
 float SDF(vec3 p);

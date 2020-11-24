@@ -26,6 +26,13 @@ public:
 		QuadricArg q_arg;
 		TraceTypes::TraceType method;
 	};
+	struct PreprocessTestArg {
+		MyExpr* model;
+		long run_count;
+		bool use_cone_trace;
+		ConeTraceTypes::ConeTraceType cone_trace_type;
+		ConeTraceTypes::ConeTraceAlgorithm cone_trace_alg;
+	};
 
 	QuadricRender() {}
 	~QuadricRender();
@@ -35,6 +42,7 @@ public:
 	void SetView(glm::vec3, glm::vec3, glm::vec3);
 	std::vector<float> RunErrorTest(TestArg arg);
 	double RunSpeedTest(TestArg arg);
+	std::vector<std::chrono::duration<double>> RunPreprocessSpeedTest(PreprocessTestArg arg);
 
 private:
 
@@ -50,6 +58,7 @@ private:
 	// cone tracing
 	bool useConeTrace = false;
 	ConeTraceTypes::ConeTraceType coneTraceDesc = ConeTraceTypes::cube;
+	ConeTraceTypes::ConeTraceAlgorithm coneTraceAlg = ConeTraceTypes::gradient;
 
 	// debugging quadric
 	glm::ivec3 illustratedQuadricCoord = glm::ivec3(0);

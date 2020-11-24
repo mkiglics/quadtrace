@@ -33,7 +33,21 @@ namespace ConeTraceTypes {
 	inline const std::vector<ConeTraceType> coneTraceTypes { 
 		ConeTraceTypes::tetrahedron, ConeTraceTypes::cube, ConeTraceTypes::octahedron, ConeTraceTypes::icosahedron 
 	};
+
+	// What kind of cone tracing we would like to use if using quadric + cone
+	struct ConeTraceAlgorithm
+	{
+		int id;
+		std::string macro_value;
+	};
+	inline const ConeTraceAlgorithm simple = { 0, "cone_trace_simple" };
+	inline const ConeTraceAlgorithm gradient = { 1, "cone_trace_gradient" };
+	inline const ConeTraceAlgorithm doubl = { 2, "cone_trace_double" };
+	inline const std::vector<ConeTraceAlgorithm> coneTraceAlgs {
+		ConeTraceTypes::simple, ConeTraceTypes::gradient, ConeTraceTypes::doubl
+	};
 }
 
 bool operator==(const TraceTypes::TraceType& t1, const  TraceTypes::TraceType& t2);
 bool operator==(const ConeTraceTypes::ConeTraceType& t1, const ConeTraceTypes::ConeTraceType& t2);
+bool operator==(const ConeTraceTypes::ConeTraceAlgorithm& t1, const ConeTraceTypes::ConeTraceAlgorithm& t2);

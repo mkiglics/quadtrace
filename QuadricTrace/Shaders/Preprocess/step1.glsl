@@ -66,7 +66,7 @@ float unboundQuadricConeTrace(in vec3 p, in vec3 n, in float dist)
 	int ray_count = RAY_DIRECTIONS.length();
 
 	// default cone trace desc
-	ConeTraceDesc coneTraceDes = ConeTraceDesc(0.01f, 100, RayCone(Ray(vec3(0.0f), 0.0f, vec3(0.0f), 0.0f), 0.0f, 0.0f));
+	ConeTraceDesc coneTraceDes = ConeTraceDesc(0.01f, 100, RayCone(Ray(vec3(0.0f), 0.0f, vec3(0.0f), 0.0f), 0.0f, 0.0f), n);
 	for (int i = 0; i < ray_count; i++)
 	{
 		RayCone r = RayCone(Ray(p,

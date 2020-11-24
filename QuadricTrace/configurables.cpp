@@ -9,3 +9,8 @@ bool operator==(const ConeTraceTypes::ConeTraceType& t1, const ConeTraceTypes::C
 {
 	return t1.id == t2.id;
 }
+
+bool operator==(const ConeTraceTypes::ConeTraceAlgorithm& t1, const ConeTraceTypes::ConeTraceAlgorithm& t2)
+{
+	return t1.id == t2.id;
+}

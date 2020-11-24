@@ -149,6 +149,25 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 	return data;
 }
 
+std::vector<std::chrono::duration<double>> QuadricRender::RunPreprocessSpeedTest(PreprocessTestArg arg)
+{
+	std::vector<std::chrono::duration<double>> durations(arg.run_count);
+	build_kernel("Shaders/sdf.tmp", arg.model);
+	useConeTrace = arg.use_cone_trace;
+	coneTraceDesc = arg.cone_trace_type;
+	coneTraceAlg = arg.cone_trace_alg;
+
+	for (int i = 0; i < arg.run_count; i++) 
+	{
+		Compile();
+		auto start = std::chrono::steady_clock::now();
+		Preprocess();
+		durations.push_back(std::chrono::steady_clock::now() - start);
+	}
+
+	return durations;
+}
+
 double QuadricRender::RunSpeedTest(TestArg arg)
 {
 	csg_tree = arg.model;
@@ -223,6 +242,7 @@ void QuadricRender::CompilePreprocess()
 		// cone trace
 		{"RAY_DIRECTIONS", std::string("gRay") + std::to_string(coneTraceDesc.rayCount) + "Directions"},
 		{"RAY_HALF_TANGENTS", std::string("gRay") + std::to_string(coneTraceDesc.rayCount) + "HalfTangents"},
+		{"CONE_TRACE_ALG", coneTraceAlg.macro_value }, 
 
 		// sampling method
 		{"UNBOUND_QUADRIC", useConeTrace ? "unboundQuadricConeTrace" : "unboundQuadricBruteForce"},
@@ -352,22 +372,27 @@ void QuadricRender::RenderUI()
 	ImGui::NewLine();
 #ifdef DEBUG
 	static int renderType = TraceTypes::quadric.id;
-	ImGui::RadioButton("Simple", &renderType, TraceTypes::sphere.id); ImGui::SameLine();
+	ImGui::RadioButton("Sphere", &renderType, TraceTypes::sphere.id); ImGui::SameLine();
 	ImGui::RadioButton("Relaxed", &renderType, TraceTypes::relaxed.id); ImGui::SameLine();
 	ImGui::RadioButton("Enhanced", &renderType, TraceTypes::enhanced.id); ImGui::SameLine();
 	ImGui::RadioButton("Quadric", &renderType, TraceTypes::quadric.id);
 
-	
 	static int coneTrace = ConeTraceTypes::cube.id;
 	ImGui::RadioButton("Tetrahedron", &coneTrace, ConeTraceTypes::tetrahedron.id); ImGui::SameLine();
 	ImGui::RadioButton("Cube", &coneTrace, ConeTraceTypes::cube.id); ImGui::SameLine();
 	ImGui::RadioButton("Octahedron", &coneTrace, ConeTraceTypes::octahedron.id); ImGui::SameLine();
 	ImGui::RadioButton("Icosahedron", &coneTrace, ConeTraceTypes::icosahedron.id);
 
-	if (trace_method.id != renderType || coneTraceDesc.id != coneTrace) 
+	static int coneTraceAlgorithm = ConeTraceTypes::gradient.id;
+	ImGui::RadioButton("Simple", &coneTraceAlgorithm, ConeTraceTypes::simple.id); ImGui::SameLine();
+	ImGui::RadioButton("Gradient", &coneTraceAlgorithm, ConeTraceTypes::gradient.id); ImGui::SameLine();
+	ImGui::RadioButton("Double", &coneTraceAlgorithm, ConeTraceTypes::doubl.id);
+
+	if (trace_method.id != renderType || coneTraceDesc.id != coneTrace || coneTraceAlg.id != coneTraceAlgorithm)
 	{
 		trace_method = TraceTypes::traceTypes[renderType];
 		coneTraceDesc = ConeTraceTypes::coneTraceTypes[coneTrace];
+		coneTraceAlg = ConeTraceTypes::coneTraceAlgs[coneTraceAlgorithm];
 		Compile();
 		Preprocess();
 	}
