@@ -30,18 +30,17 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 	// if the ray hits the box then simply return a constant color
 	vec3 quadricPos = voxelToGlobal(uIllustratedQuadricCood, imageSize(inField));
 	vec3 voxelSize = voxelWorldSize(imageSize(inField));
-	vec3 retColor = vec3(0);
+	vec3 retColor = vec3(0); //return retColor;
 	if (doesHitParcel(cameraRay.ray.P, cameraRay.ray.V, quadricPos, voxelSize)) 
 	{
 		retColor += vec3(0.5f, 0.5f, 0);
 	}
-
 	QuadricField field = decodeQuadricField(imageLoad(inField, uIllustratedQuadricCood));
 
 	// the 2 intersection points for the quadric and the camera ray
 	vec2 intersectionTs = quadric_Intersect(cameraRay.ray.P, cameraRay.ray.V, quadricPos, field.normal, field.k);
 	float closerT = min(intersectionTs.x, intersectionTs.y);
-//	closerT = quadric_IntersectClosest(cameraRay.ray.P, cameraRay.ray.V, quadricPos, field.normal, field.k);
+	closerT = quadric_IntersectClosest(cameraRay.ray.P, cameraRay.ray.V, quadricPos, field.normal, field.k);
 	float fartherT = max(intersectionTs.x, intersectionTs.y);
 
 	bool quadricIntersected = closerT > 0 && !isinf(closerT);
@@ -49,7 +48,7 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 	// mix color for quadric
 	if (quadricIntersected) 
 	{
-		//retColor += vec3(0.5f, 0.0f, 0.0f);
+//		retColor += vec3(0.5f, 0.0f, 0.0f);
 		
 		// where the quadric was hit by the camera ray
 		vec3 quadricHitPos = cameraRay.ray.P + cameraRay.ray.V * closerT;
@@ -57,7 +56,7 @@ vec3 getQuadricColor(in RayCone cameraRay, in vec3 object_hit_pos)
 		// the above hit pos in the quadric's local space
 		vec3 quadricNormal = -quadric_GetNormal(quadricHitPos, quadricPos, field.normal, field.k);
 		// retColor += clamp(shadeDirectionalLight(quadricHitPos, quadricNormal, quadricMaterial, quadricLight), vec3(0), vec3(1));
-		return quadricNormal;
+		retColor += quadricNormal;
 		// retColor += clamp(shadeDirectionalLight(quadricHitPos, quadricNormal, quadricMaterial, quadricLight2), vec3(0), vec3(1));
 
 		/*const vec3 inFrontOfQuadric = vec3(255, 0, 0) / 255.0;
@@ -81,6 +80,5 @@ void main()
 	vec3 quadricColor = getQuadricColor(raycone, field.hitPoint);
 	vec3 previousColor = clamp(imageLoad(outColor, pixel).xyz, vec3(0), vec3(1));
 	
-	// imageStore(outColor, pixel, vec4(field.dist));
-	imageStore(outColor, pixel, vec4(mix(previousColor, quadricColor, 0.3f), 1));
+	imageStore(outColor, pixel, vec4(mix(previousColor, quadricColor, 0), 1));
 }

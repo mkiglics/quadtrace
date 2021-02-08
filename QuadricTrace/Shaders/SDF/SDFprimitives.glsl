@@ -1,7 +1,7 @@
 //?#version 450
     
-float sdfSphere(vec3 p, vec3 c, float r) {
-	return length(p - c) - r;
+float sdfSphere(vec3 p, float r) {
+	return length(p) - r;
 }
 
 float sdfBox(vec3 p, vec3 b) 

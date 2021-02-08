@@ -16,7 +16,7 @@ class QuadricRender
 public:	
 	struct QuadricArg {
 		float delta = 0.008;
-		int ray_count = 70;
+		int ray_count = 30;
 		float correction = 0.01;
 	};
 	struct TestArg {
@@ -67,6 +67,7 @@ private:
 	// a variable that is used all over the place to store text
 	TraceTypes::TraceType trace_method = TraceTypes::quadric;
 	QuadricArg quadricArgs;
+	int maxIterations = 64;
 
 	df::Texture3D<glm::vec4> eccentricityTexture;
 	df::Texture2D<glm::vec4> distanceTexture;

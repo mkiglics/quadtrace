@@ -21,6 +21,6 @@ TraceResult sphereTrace(in Ray ray, in SphereTraceDesc params)
     ret.flags =  int(ret.T >= ray.Tmax)
               | (int(d <= params.epsilon* ret.T)  << 1)
               | (int(i >= params.maxiters) << 2);
-
+//    ret.flags = i;
     return ret;
 }

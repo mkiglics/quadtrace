@@ -145,35 +145,50 @@
     <ClCompile Include="QuadricRender.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\common.glsl" />
     <None Include="Shaders\Debug\quadric_showcase.comp" />
-    <None Include="Shaders\SphereTrace\enhanced_sphere_trace.glsl" />
-    <None Include="Shaders\Examples\blocks.glsl" />
-    <None Include="Shaders\Examples\default.glsl" />
-    <None Include="Shaders\Examples\menger.glsl" />
-    <None Include="Shaders\Examples\ring.glsl" />
-    <None Include="Shaders\Examples\spherebox.glsl" />
-    <None Include="Shaders\Examples\spheres.glsl" />
-    <None Include="Shaders\Examples\tower.glsl" />
-    <None Include="Shaders\fragment.frag" />
-    <None Include="Shaders\frame.comp" />
-    <None Include="Shaders\quadric.glsl" />
-    <None Include="Shaders\quadric_trace.glsl" />
-    <None Include="Shaders\SphereTrace\relaxed_sphere_trace.glsl" />
-    <None Include="Shaders\sdf_common.glsl" />
-    <None Include="Shaders\SphereTrace\sphere_trace.glsl" />
+    <None Include="Shaders\defines.glsl" />
+    <None Include="Shaders\Math\box.glsl" />
+    <None Include="Shaders\Math\common.glsl" />
+    <None Include="Shaders\Math\distanceInterface.glsl" />
+    <None Include="Shaders\Math\graphics.comp" />
+    <None Include="Shaders\Math\interface.glsl" />
+    <None Include="Shaders\Math\quadric.glsl" />
+    <None Include="Shaders\Old\common.glsl" />
+    <None Include="Shaders\Old\eccentricity.glsl" />
+    <None Include="Shaders\Old\Examples\blocks.glsl" />
+    <None Include="Shaders\Old\Examples\default.glsl" />
+    <None Include="Shaders\Old\Examples\menger.glsl" />
+    <None Include="Shaders\Old\Examples\ring.glsl" />
+    <None Include="Shaders\Old\Examples\spherebox.glsl" />
+    <None Include="Shaders\Old\Examples\spheres.glsl" />
+    <None Include="Shaders\Old\Examples\tower.glsl" />
+    <None Include="Shaders\Old\fragment.frag" />
+    <None Include="Shaders\Old\frame.comp" />
+    <None Include="Shaders\Old\quadric.glsl" />
+    <None Include="Shaders\Old\sdf.glsl" />
+    <None Include="Shaders\Old\sdf_common.glsl" />
+    <None Include="Shaders\Old\sdf_precompute.glsl" />
+    <None Include="Shaders\Old\SphereTrace\enhanced_sphere_trace.glsl" />
+    <None Include="Shaders\Old\SphereTrace\relaxed_sphere_trace.glsl" />
+    <None Include="Shaders\Old\SphereTrace\sphere_trace.glsl" />
+    <None Include="Shaders\Old\values.comp" />
+    <None Include="Shaders\Old\vert.vert" />
+    <None Include="Shaders\Preprocess\constants.glsl" />
+    <None Include="Shaders\Preprocess\step1.glsl" />
+    <None Include="Shaders\Render\fragment.frag" />
+    <None Include="Shaders\Render\pass1.comp" />
+    <None Include="Shaders\Render\pass2.comp" />
+    <None Include="Shaders\Render\passDebug.comp" />
+    <None Include="Shaders\Render\vert.vert" />
+    <None Include="Shaders\SDF\SDFcommon.glsl" />
+    <None Include="Shaders\SDF\SDFprimitives.glsl" />
+    <None Include="Shaders\Tracing\cone_trace.glsl" />
+    <None Include="Shaders\Tracing\enhanced_sphere_trace.glsl" />
+    <None Include="Shaders\Tracing\field_sphere_trace.glsl" />
+    <None Include="Shaders\Tracing\quadric_trace.glsl" />
+    <None Include="Shaders\Tracing\relaxed_sphere_trace.glsl" />
+    <None Include="Shaders\Tracing\sphere_trace.glsl" />
     <None Include="Shaders\values.comp" />
-    <None Include="Shaders\vert.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\sdf_precompute.glsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\eccentricity.glsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CodeGen\bounding_opt.h" />
@@ -191,6 +206,14 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="test.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Old\ecc.compute">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shaders\Old\sdf.compute">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

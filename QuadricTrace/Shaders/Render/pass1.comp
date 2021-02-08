@@ -16,6 +16,8 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(rgba32f, binding = 0) restrict readonly uniform image3D inField;
 layout(binding = 1) restrict writeonly uniform image2D outDistance;
 
+uniform int uMaxIterations = 64;
+
 #ifndef PASS1_TRACING
 #define PASS1_TRACING(ray, desc, inField) (quadricTrace(ray, desc, inField))
 #endif
@@ -25,11 +27,12 @@ void main()
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 resolution = ivec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 	RayCone raycone = Camera(pixel, resolution);
-	SphereTraceDesc desc = SphereTraceDesc(0.001f, 64);
+	SphereTraceDesc desc = SphereTraceDesc(0.001f, uMaxIterations);
 
 	TraceResult traceResult = PASS1_TRACING(raycone.ray, desc, inField);
 //	traceResult.T = 0;
 	vec3 resultP = raycone.ray.P + raycone.ray.V * traceResult.T;
+	resultP.x = traceResult.flags;
 
 	storeDistanceField(outDistance, pixel, DistanceField(resultP, traceResult.T));
 }

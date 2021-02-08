@@ -3,10 +3,10 @@
 #include <sstream>
 #include "configurables.h"
 
-// #define TEST
+ //#define TEST
 
 MyExpr* models[] = {
-	model1_expr(),
+	model1_expr(1, 2, 1.5),
 	model2_expr(),
 	model3_expr(),
 	model4_expr(),
@@ -18,7 +18,7 @@ MyExpr* models[] = {
 };
 
 glm::vec3 pos[] = {
-	{2,1.1,2},
+	{4,4.5,4},
 	{0.1,2,0.3},
 	{2,1.1,2},
 	{2,1.1,2},
@@ -26,18 +26,19 @@ glm::vec3 pos[] = {
 	{1,4.1,0.4},
 	{1,3.1,0},
 	{-2,3.1,-2},
-	{9,9.1,9}
+	{13,13.1,13}
 };
 
-double EvalError(std::vector<float>& base, std::vector<float>& curr)
+double EvalError(std::vector<float>& base, std::vector<float>& curr, int iter = 64)
 {
-	double sum = 0;
+	long sum = 0;
 	for (unsigned i = 0; i < base.size(); ++i)
 	{
-		if (base[i] == 1) continue;
-		sum += abs(base[i] - curr[i]);
+		sum += curr[i] * iter;
+		if (curr[i] == 1 || base[i] > 0) continue;
+		//sum += abs(base[i] - curr[i]);
 	}
-	return (sum);
+	return (sum) / (640.0*480);
 }
 
 void runSpeedTests(const char* infilename, const char* outfilename, QuadricRender& renderer)
@@ -62,14 +63,12 @@ void runSpeedTests(const char* infilename, const char* outfilename, QuadricRende
 		arg.model = models[model];
 		arg.method = TraceTypes::sphere;
 		out << renderer.RunSpeedTest(arg);
-		arg.method = TraceTypes::enhanced;
-		out << "," << renderer.RunSpeedTest(arg);
 		arg.method = TraceTypes::relaxed;
 		out << "," << renderer.RunSpeedTest(arg);
-		arg.method = TraceTypes::quadric;
-		arg.q_arg = { 0.003, 70, 0.01 };
+		arg.method = TraceTypes::enhanced;
 		out << "," << renderer.RunSpeedTest(arg);
-		arg.q_arg = { 0.003, 70, 0.1 };
+		arg.method = TraceTypes::quadric;
+		arg.q_arg = { 0.003, model < 5 ? 80 : 30, 0.1 };
 		out << "," << renderer.RunSpeedTest(arg);
 		out << "\n";
 	}
@@ -82,10 +81,10 @@ void runErrorTests(const char* outfilename, QuadricRender& renderer)
 	std::ofstream out(outfilename);
 	for (int i = 0; i < 9; ++i)
 	{
-		if (i != 8) continue;
+		//if (i != 8) continue;
 		renderer.SetView(pos[i], (i == 7 ? glm::vec3(2, 0, 2) : glm::vec3(0)), { 0,1,0 });
 		std::vector<float> base = renderer.RunErrorTest({ models[i], 0, 1000, {}, TraceTypes::sphere });
-		for (int n = 8; n <= 64; n *= 2)
+		for (int n = 64; n <= 64; n *= 2)
 		{
 			std::vector<float> res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, TraceTypes::sphere });
 			out << EvalError(base, res) << ',';
@@ -93,9 +92,7 @@ void runErrorTests(const char* outfilename, QuadricRender& renderer)
 			out << EvalError(base, res) << ',';
 			res = renderer.RunErrorTest({ models[i], 0, n, {1, 70, 0.01}, TraceTypes::enhanced });
 			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, {0.003, 70, 0.01}, TraceTypes::quadric });
-			out << EvalError(base, res) << ',';
-			res = renderer.RunErrorTest({ models[i], 0, n, { 0.003, 70, 0.1 }, TraceTypes::quadric });
+			res = renderer.RunErrorTest({ models[i], 0, n, { 0.003, i < 5 ? 80 : 30, 0.1 }, TraceTypes::quadric });
 			out << EvalError(base, res) << ',';
 		}
 		out << '\n';
@@ -111,8 +108,8 @@ int main(int argc, char* args[])
 	renderer.Init(16);
 
 #ifdef TEST
-	runSpeedTests("test.txt", "Benchmark/out.txt", renderer);
-	//runErrorTests("Benchmark/error.txt", renderer);
+	//runSpeedTests("test.txt", "Benchmark/out.txt", renderer);
+	runErrorTests("Benchmark/error.txt", renderer);
 #else
 	renderer.Render();
 #endif

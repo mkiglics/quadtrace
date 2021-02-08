@@ -1,3 +1,4 @@
+#version 130
 //?#version 450
 
 //?#include "../SDF/SDFcommon.glsl"
@@ -11,6 +12,15 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(rgba32f, binding = 0) restrict readonly uniform image2D inDistance;
 layout(binding = 1) restrict writeonly uniform image2D outColor;
 
+uniform int uMaxIterations = 64;
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
 void main()
 {
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -19,16 +29,37 @@ void main()
 
 	DistanceField field = loadDistanceField(inDistance, pixel);
 	raycone.ray.Tmin = field.dist;
-	TraceResult result = enhancedSphereTrace(raycone.ray, SphereTraceDesc(0.001, 64));
+	int flags = int(field.hitPoint.x);
+	int iter = -1;
+	if (uMaxIterations > 0) iter = uMaxIterations - flags;
+	TraceResult result = enhancedSphereTrace(raycone.ray, SphereTraceDesc(0.001, iter));
 	vec3 resultP = raycone.ray.P + raycone.ray.V * result.T;
+	if (uMaxIterations > 0) flags += result.flags;
+	if (uMaxIterations > 0) iter = 1;
+	vec3 c = vec3(flags / float(iter * uMaxIterations));
+	imageStore(outColor, pixel, vec4((c), 1));
+//	return;
+//	if (bool(result.flags & 1))
+//		c = vec3(0);
+//	if (uMaxIterations > 0) flags = result.flags;
+//	if (bool(flags & 4)) {
+//		imageStore(outColor, pixel, vec4(1,0,0,1));
+//		return;
+//	}
+//	c = clamp(vec3(length(raycone.ray.P - resultP)/100.0), vec3(0), vec3(1));
+//	imageStore(outColor, pixel, vec4(c, 1));
+//	return;
 
 	vec3 norm = computeGradient2(resultP);
 	vec3 col = shadePointLight(resultP, norm,
-						Material(vec3(0.5, 0.5, 0.8), 0.1, 1.5, 0.7),
-						PointLight(vec3(2, 4, 2), vec3(60))
+						Material(vec3(0.5, 0.5, 0.5), 0.1, 1.5, 0.7),
+						PointLight(vec3(4, 4, 4), vec3(160))
 					);
 
-
-//	col = vec3(result.flags/64.0);
+//	col = vec3(result.flags/16.0);
 	imageStore(outColor, pixel, vec4(clamp(col, vec3(0), vec3(1)), 1));
 }
+
+
+
+

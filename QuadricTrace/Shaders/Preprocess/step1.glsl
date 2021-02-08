@@ -26,7 +26,7 @@ layout(binding = 0) restrict writeonly uniform image3D outField;
 #endif
 
 uniform float uCorrection = 0.01f;
-uniform ivec2 uSampleResolution = ivec2(100, 100);
+uniform ivec2 uSampleResolution = ivec2(40, 40);
 
 /* The brute force method (sending rays in a lot of directions) for computing k.
 */

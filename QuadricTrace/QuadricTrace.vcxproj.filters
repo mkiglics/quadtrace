@@ -8,14 +8,32 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{4ebf0362-f5a1-4f42-a737-2285308b02d4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Examples">
-      <UniqueIdentifier>{520fdbdf-c316-4c5f-8007-5769630f9359}</UniqueIdentifier>
-    </Filter>
     <Filter Include="CodeGen">
       <UniqueIdentifier>{6046498a-9470-4b36-9f7a-f6adc8027958}</UniqueIdentifier>
     </Filter>
     <Filter Include="CodeGen\Objects">
       <UniqueIdentifier>{20f2832a-7611-4343-af8d-7b2b2d64a0f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Math">
+      <UniqueIdentifier>{2863c830-aa7b-499f-a054-34c628071fc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Old">
+      <UniqueIdentifier>{5afe035b-6587-4d9a-adef-7ec3f612df9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Preprocess">
+      <UniqueIdentifier>{0383266c-79fe-4c95-af2a-590b37b93131}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render">
+      <UniqueIdentifier>{dfdc34e4-126c-424c-9187-e1b5684edad1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SDF">
+      <UniqueIdentifier>{adef35f8-91dd-4a15-9142-78f34c1924ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Tracing">
+      <UniqueIdentifier>{5e40cfbe-a3c1-4174-ab3c-429ce48225c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Old\Examples">
+      <UniqueIdentifier>{520fdbdf-c316-4c5f-8007-5769630f9359}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -40,63 +58,140 @@
     <ClCompile Include="configurables.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\vert.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\Examples\default.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\Examples\ring.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\Examples\tower.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\Examples\spherebox.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\fragment.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\Examples\blocks.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\sdf_common.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\sdf_precompute.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\quadric.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\eccentricity.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\frame.comp">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\Examples\menger.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\Examples\spheres.glsl">
-      <Filter>Shaders\Examples</Filter>
-    </None>
-    <None Include="Shaders\quadric_trace.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SphereTrace\enhanced_sphere_trace.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SphereTrace\relaxed_sphere_trace.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SphereTrace\sphere_trace.glsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\values.comp" />
     <None Include="Shaders\Debug\quadric_showcase.comp" />
-    <None Include="Shaders\common.glsl" />
+    <None Include="Shaders\Math\box.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\common.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\distanceInterface.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\graphics.comp">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\interface.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\quadric.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Tracing\cone_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\Tracing\enhanced_sphere_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\Tracing\field_sphere_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\Tracing\quadric_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\Tracing\relaxed_sphere_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\Tracing\sphere_trace.glsl">
+      <Filter>Shaders\Tracing</Filter>
+    </None>
+    <None Include="Shaders\SDF\SDFcommon.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\SDF\SDFprimitives.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\Render\fragment.frag">
+      <Filter>Shaders\Render</Filter>
+    </None>
+    <None Include="Shaders\Render\pass1.comp">
+      <Filter>Shaders\Render</Filter>
+    </None>
+    <None Include="Shaders\Render\pass2.comp">
+      <Filter>Shaders\Render</Filter>
+    </None>
+    <None Include="Shaders\Render\passDebug.comp">
+      <Filter>Shaders\Render</Filter>
+    </None>
+    <None Include="Shaders\Render\vert.vert">
+      <Filter>Shaders\Render</Filter>
+    </None>
+    <None Include="Shaders\Preprocess\constants.glsl">
+      <Filter>Shaders\Preprocess</Filter>
+    </None>
+    <None Include="Shaders\Preprocess\step1.glsl">
+      <Filter>Shaders\Preprocess</Filter>
+    </None>
+    <None Include="Shaders\Old\common.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\eccentricity.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\fragment.frag">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\frame.comp">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\quadric.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\sdf.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\sdf_common.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\sdf_precompute.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\values.comp">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\vert.vert">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\SphereTrace\enhanced_sphere_trace.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\SphereTrace\relaxed_sphere_trace.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\SphereTrace\sphere_trace.glsl">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\blocks.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\default.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\menger.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\ring.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\spherebox.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\spheres.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\Examples\tower.glsl">
+      <Filter>Shaders\Old\Examples</Filter>
+    </None>
+    <None Include="Shaders\Old\ecc.compute">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\Old\sdf.compute">
+      <Filter>Shaders\Old</Filter>
+    </None>
+    <None Include="Shaders\defines.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QuadricRender.h" />

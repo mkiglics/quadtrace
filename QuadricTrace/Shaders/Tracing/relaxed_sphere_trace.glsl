@@ -29,5 +29,6 @@ TraceResult relaxedSphereTracing(in Ray ray, in SphereTraceDesc params)
 	ret.flags =  int(ret.T >= ray.Tmax)
               | (int(di <= params.epsilon * (ret.T + di))  << 1)
               | (int(i >= params.maxiters) << 2);
+//	ret.flags = i;
 	return ret;
 }

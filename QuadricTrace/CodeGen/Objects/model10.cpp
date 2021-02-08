@@ -15,8 +15,8 @@ using namespace glm;
 MyExpr* model10_expr(int n) {
 
     MyExpr* out = nullptr;
-    
-   /* MyExpr* b = box<Fields>(0.5, 0.5, 0.5);
+
+    /* MyExpr* b = box<Fields>(0.5, 0.5, 0.5);
     for (int i = 0; i < 8; ++i)
     {
         for (int j = 0; j < 8; ++j)

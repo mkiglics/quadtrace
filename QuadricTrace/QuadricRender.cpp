@@ -11,7 +11,7 @@ void QuadricRender::Init(int gridSize = 16)
 	grid = glm::ivec3(gridSize);
 	kAndDistValues.resize(grid.x * grid.y * grid.z);
 
-	csg_tree = model4_expr();
+	csg_tree = model2_expr();
 	build_kernel("Shaders/sdf.tmp", csg_tree); // generates the function
 
 	if (!LoadSDF("Shaders/sdf.tmp"))
@@ -48,7 +48,7 @@ void QuadricRender::Init(int gridSize = 16)
 void QuadricRender::Preprocess()
 {
 	glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	*sdfGradientComputeProgram << "a" << 0;
+	*sdfGradientComputeProgram << "uSampleResolution" << glm::ivec2(quadricArgs.ray_count);
 	glDispatchCompute(grid.x, grid.y, grid.z);
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -72,13 +72,13 @@ void QuadricRender::Render()
 		{
 			cam.Update();
 
-			*pass1Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
+			*pass1Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << maxIterations;
 			glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
 			glBindImageTexture(1, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-			*pass2Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt();
+			*pass2Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << (trace_method == TraceTypes::quadric ? maxIterations : -maxIterations);
 			glBindImageTexture(0, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 			glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
@@ -95,7 +95,8 @@ void QuadricRender::Render()
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 #endif
 
-			//pass1Program->Render();
+			pass2Program->Render();
+			pass1Program->Render();
 			//debugCompProgram->Render();
 			df::Backbuffer << df::Clear() << *program << "frame" << frameTexture;
 
@@ -116,7 +117,8 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 	build_kernel("Shaders/sdf.tmp", csg_tree);
 	LoadSDF("Shaders/sdf.tmp"); 
 	Compile();
-	Preprocess();
+	if (trace_method == TraceTypes::quadric)
+		Preprocess();
 	
 	std::vector<float> data(w * h);
 	int fr = 0;
@@ -125,12 +127,15 @@ std::vector<float> QuadricRender::RunErrorTest(TestArg arg)
 		{
 			cam.Update();
 
-			*pass2Program << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
-				<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
-				<< "eccentricity" << eccentricityTexture << "N" << grid
-				<< "render_quadric" << (int)(arg.method == TraceTypes::quadric) << "delta" << quadricArgs.delta << "error_test" << 1 << "max_iter" << arg.max_steps
-				<< "trace_method" << arg.method.id << "showQuadric" << 0;
-			glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			*pass1Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << arg.max_steps;
+			glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			glDispatchCompute(w, h, 1);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+			*pass2Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << (trace_method == TraceTypes::quadric ? arg.max_steps : -arg.max_steps);
+			glBindImageTexture(0, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			glDispatchCompute(w, h, 1);
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -176,7 +181,8 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 	build_kernel("Shaders/sdf.tmp", csg_tree);
 	LoadSDF("Shaders/sdf.tmp"); 
 	Compile();
-	Preprocess();
+	if (trace_method == TraceTypes::quadric)
+		Preprocess();
 
 	long frame = -10;
 	std::chrono::duration<double> elapsed;
@@ -194,12 +200,15 @@ double QuadricRender::RunSpeedTest(TestArg arg)
 		}
 		++frame;
 		cam.Update();
-		*pass2Program << "eye" << cam.GetEye() << "at" << cam.GetAt() << "up" << cam.GetUp()
-			<< "windowSize" << glm::vec2(cam.GetSize().x, cam.GetSize().y)
-			<< "eccentricity" << eccentricityTexture << "N" << grid
-			<< "delta" << quadricArgs.delta << "error_test" << 0 << "max_iter" << arg.max_steps
-			<< "showQuadric" << 0;
-		glBindImageTexture(0, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		*pass1Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << arg.max_steps;
+		glBindImageTexture(0, (GLuint)eccentricityTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
+		glBindImageTexture(1, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glDispatchCompute(w, h, 1);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		*pass2Program << "uCameraEye" << cam.GetEye() << "uCameraCenter" << cam.GetAt() << "uMaxIterations" << (trace_method == TraceTypes::quadric ? arg.max_steps : 0);
+		glBindImageTexture(0, (GLuint)distanceTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		glBindImageTexture(1, (GLuint)frameTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glDispatchCompute(w, h, 1);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -415,6 +424,8 @@ void QuadricRender::RenderUI()
 		ImGui::Text("K = %f", kAndDistValues[kIndex].x);
 		ImGui::Text("Dist = %f", kAndDistValues[kIndex].y);
 	}
+
+	ImGui::SliderInt("Max iterations", &maxIterations, 1, 64);
 
 	if (ImGui::Button("Save eccentricity")) 
 	{
